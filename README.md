@@ -1,5 +1,5 @@
 # html2rss
-Convert an HTML page to RSS
+Convert an HTML page to RSS with URL support
 
 # Table of Contents
 - [What is this?](#what-is-this)
