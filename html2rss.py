@@ -1,5 +1,5 @@
 '''
-html_to_rss.py by  Hussein Esmail
+html2rss.py by  Hussein Esmail
 Created: 2021 05 05
 Updated: 2021 05 10
 Description: This inputs an HTML file in the arguments and converts a copy of it to an RSS format where in-item URLs are supported in Newsboat (like on Reddit RSS pages, because if I prefer them then someone else probably does too).
@@ -109,8 +109,10 @@ def main():
                         print(message_copied)
                     if out_file:
                         str_file_name = input("File name for output: ")
-                        open(str_post_title, "a").writelines(lines_finished)
-                        print(f"Wrote to {str_post_title}")
+                        with open(str_file_name, "a") as output_file:
+                            for line in lines_finished:
+                                output_file.write(f"{line}\n")
+                        print(f"Wrote to '{str_file_name}'")
                     if out_stdout:
                         print("\n".join(lines_finished))
                     break
