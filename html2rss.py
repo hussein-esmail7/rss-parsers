@@ -76,13 +76,11 @@ def main():
     auto_rss_path = "/hdd1/Backups/Website/husseinesmail/rss.xml"
     auto_rss_insert = "<!-- FEEDS START -->"
 
-
     # ========= VARIABLES USED BY PROGRAM =========
-    lines_wanted = []
-    lines_finished = []
-    str_post_title = ""     # Used later, must be in this scope
     int_reached_end_of_body_tag = 0
-    
+    str_post_title  = ""    # Used later, must be in this scope
+    lines_wanted    = []    # Formatted lines will go here (after replacing escape codes)
+    lines_finished  = []    # RSS post lines will go here (and lines from lines_wanted)
 
     if len(sys.argv) != 2:
         if len(sys.argv) < 2:
@@ -90,8 +88,11 @@ def main():
         else:
             print(f"{str_prefix_err} {error_too_many_args}")
     else: # If this program received the proper number of arguments
-        html_path = sys.argv[-1]
-        if html_path.lower().endswith(".html"):
+        if "-h" in sys.argv[-1] or "--help" in sys.argv[-1]:
+            print("Help message here")
+            # TODO: Write help message here.
+        elif sys.argv[-1].lower().endswith(".html"):
+            html_path = sys.argv[-1]
             lines_all = open(os.path.expanduser(html_path)).readlines()  # Read the HTML file
             # expanduser(): If user types "~" instead of home dir path
             cont = True             # Keep asking about title tag until the user verifies the title
