@@ -45,6 +45,21 @@ def main():
     else: # If this program received the proper number of arguments
         if sys.argv[-1].lower().endswith(".html"):
             lines_all = open(sys.argv[-1]).readlines()
+
+            for line in lines_all:
+                if f"<{tag_type_title}" in line.strip(): 
+                    # Didn't include '>' because there may be classes before the bracket
+                    if f"</{tag_type_title}>" in line.strip(): 
+                        # Title is definitely in this line only
+                        
+                        str_post_title = line[line.find("&gt;")+4:line.replace("&lt;", "XXXX", 1).find("&lt;")].strip()
+                    else:
+                        print("TODO")
+
+
+
+
+
             while True: # Ask for the line number of where to start converting (as int)
                 int_line_start = input(f"First line of the post (h1 tag with the title) [/{len(lines_all)} lines]? ")
                 try:
@@ -55,8 +70,12 @@ def main():
                 except:
                     print(message_not_an_int)
                     pass
+
+            
             if sys.argv[-1].startswith("./"): # Support for current working directory
                 os.chdir(os.getcwd())
+            elif sys.argv[-1].startswith("~"):  # Support for home directory
+                os.chdir(os.path.expanduser("~"))
             
             for position, line in enumerate(lines_all):
                 if "</body>" in line.replace(" ", ""): # Check if it reached the end of the body tag, aka the end of the RSS content
