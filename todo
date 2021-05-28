@@ -1,5 +1,4 @@
 Changes to implement (Python version):
-- Automatically detect all <h1> tags instead of asking for line number
 - Automatically determine the URL to the post instead of asking
 - Help page
 
