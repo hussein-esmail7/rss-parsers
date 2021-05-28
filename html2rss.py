@@ -6,24 +6,60 @@ Description: This inputs an HTML file in the arguments and converts a copy of it
 '''
 
 """
-Program Requirements:
+Program Requirements (for now):
 - Title tag must be only in one line (ex: <h1>Title</h1>)
-- 
+"""
 
 """
+TODO:
+- URL formatting if user types 'test' for example
+- Automatically add to RSS file as an output method
+- Help page
+"""
+
 import os, sys
 import datetime
 import pyperclip
 
+# ========= COLOR CODES =========
+color_end       = '\033[0m'
+color_darkgrey  = '\033[90m'
+color_red       = '\033[91m'
+color_green     = '\033[92m'
+color_yellow    = '\033[93m'
+color_blue      = '\033[94m'
+color_pink      = '\033[95m'
+color_cyan      = '\033[96m'
+color_white     = '\033[97m'
+color_grey      = '\033[98m'
+
+# ========= COLORED STRINGS =========
+str_prefix_q    = f"[{color_pink}Q{color_end}]"
+str_prefix_y_n  = f"[{color_pink}y/n{color_end}]"
+str_prefix_ques = f"{str_prefix_q}\t "
+str_prefix_err  = f"[{color_red}ERROR{color_end}]\t "
+str_prefix_done = f"[{color_green}DONE{color_end}]\t "
+
+# ========= ERROR MESSAGE VARIABLES =========
+error_input_html      = "You need to input an HTML file to convert!"
+error_too_many_args   = "You typed more arguments than I expected. Please verify and try again."
+error_not_an_int      = "I didn't like that input! Please type an int."
+error_incorrect_args  = "I don't know what you gave me... but it wasn't an HTML file."
+error_no_title        = "You didn't select a title. Please restart the program."
+error_no_out_choice   = "You gotta pick something, dude."
+error_neither_y_n     = "The first character must either be a 'y' or 'n'."
+
+message_copied        = "Copied to clipboard."
+
 def yes_or_no(str_ask):
     while True:
-        y_n = input(str_ask).lower()
+        y_n = input(f"{str_prefix_q} {str_prefix_y_n} {str_ask}").lower()
         if y_n[0] == "y":
             return True
         elif y_n[0] == "n":
             return False
         else:
-            print("The first character must either be a 'y' or 'n'.")
+            print(f"{str_prefix_err} {error_neither_y_n}")
 
 def main():
     # ========= CONFIGURABLE VARIABLES =========
@@ -32,35 +68,31 @@ def main():
     term = "Articles"
     tag_type_title = "h1"   # Will automatically be the title tag of the RSS post
     char_placehold = "|"    # This character is used in determining what's inside the title tag
-    # TODO: Implement variables below
+    
     auto_url = True         # Automatically guess URL to the post (user can still change when running)
     auto_url_template = "https://husseinesmail.xyz/articles/"   # + {HTML page}
+    # TODO: Implement variables below
+    auto_rss_add = True
+    auto_rss_path = "/hdd1/Backups/Website/husseinesmail/rss.xml"
+    auto_rss_insert = "<!-- FEEDS START -->"
 
-    
-    # ========= ERROR MESSAGE VARIABLES =========
-    message_input_html = "You need to input an HTML file to convert!"
-    message_too_many_args = "You typed more arguments than I expected. Please verify and try again."
-    message_not_an_int = "I didn't like that input! Please type an int."
-    message_incorrect_args = "I don't know what you gave me... but it wasn't an HTML file."
-    message_copied = "Copied to clipboard."
-    message_no_title = "You didn't select a title. Please restart the program."
 
     # ========= VARIABLES USED BY PROGRAM =========
     lines_wanted = []
     lines_finished = []
     str_post_title = ""     # Used later, must be in this scope
     int_reached_end_of_body_tag = 0
-
     
 
     if len(sys.argv) != 2:
         if len(sys.argv) < 2:
-            print(message_input_html)
+            print(f"{str_prefix_err} {error_input_html}")
         else:
-            print(message_too_many_args)
+            print(f"{str_prefix_err} {error_too_many_args}")
     else: # If this program received the proper number of arguments
-        if sys.argv[-1].lower().endswith(".html"):
-            lines_all = open(os.path.expanduser(sys.argv[-1])).readlines()  # Read the HTML file
+        html_path = sys.argv[-1]
+        if html_path.lower().endswith(".html"):
+            lines_all = open(os.path.expanduser(html_path)).readlines()  # Read the HTML file
             # expanduser(): If user types "~" instead of home dir path
             cont = True             # Keep asking about title tag until the user verifies the title
             for position, line in enumerate(lines_all):  # For every line
@@ -70,29 +102,16 @@ def main():
                         line2 = line.replace("<", "x", 1).replace(">", char_placehold, 1).replace("<", char_placehold, 1)
                         indexes = [i for i, ltr in enumerate(line2) if ltr == char_placehold]
                         line3 = line[indexes[0]+1:indexes[-1]].strip()
-                        if len(line3) > 0 and yes_or_no(f"Is this the title of the post: '{line3}' [y/n]: "):
+                        if len(line3) > 0 and yes_or_no(f"Is this the title: '{line3}'? "):
                             str_post_title = line3      # Set selection as the post title
                             cont = False                # Do not keep asking about titles
                             int_line_start = position   # Line number of the title of the post
                             # print(f"Title set as: {str_post_title}")
             if cont:
-                print(message_no_title)     # User did not select a title
+                print(f"{str_prefix_err} {error_no_title}")     # User did not select a title
                 sys.exit()                  # User must restart program and select one then
-
-            """
-            while True: # Ask for the line number of where to start converting (as int)
-                int_line_start = input(f"First line of the post (h1 tag with the title) [/{len(lines_all)} lines]? ")
-                try:
-                    int_line_start = int(int_line_start) - 1 
-                    # -1 beacuse it won't read the line number provided otherwise, it would start at the next line 
-                    # (tl;dr: arrays start at 0)
-                    break
-                except:
-                    print(message_not_an_int)
-                    pass
-            """
             
-            if sys.argv[-1][0] == "." and not sys.argv[-1][0].isalnum():   
+            if html_path[0] == "." and not html_path[0].isalnum():   
                 # Support for current working directory
                 os.chdir(os.getcwd())
             
@@ -102,22 +121,18 @@ def main():
                 if int_line_start <= position and int_reached_end_of_body_tag == 0: # If it's after or on the start line number, and if it hasn't reached the end
                     # Need to replace "&" with "&amp;" first or else it will also replace the other escape codes too.
                     lines_wanted.append(line.replace("&", "&amp;").replace("'", "&apos;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-            # At this point, lines_wanted has all the formatted RSS-friendly HTML lines we want, with \n at the end of each line.
-            # Check for the post title:
-            """
-            cont = True
-            for line in lines_wanted:
-                if "&lt;" + tag_type_title in line.replace(" ", "") and cont:
-                    str_post_title = line[line.find("&gt;")+4:line.replace("&lt;", "XXXX", 1).find("&lt;")].strip()
-                    is_title = yes_or_no(f"Is this the post title: \"{str_post_title}\" [y/n]? ")
-                    if is_title:
-                        cont = False
-            """
             
             cont = True
+            if auto_url:
+                file_name = html_path.split("/")[-1]
+                article_url_tmp = f"{auto_url_template}{file_name}"
+                cont = not yes_or_no(f"Is this correct: '{article_url_tmp}'? ")
+                if not cont:
+                    article_url = article_url_tmp
             while cont: # Keep asking for URL until user confirms it is correct.
-                article_url = input("Article URL: ")
-                cont = not yes_or_no(f"Is this correct: {article_url} [y/n]: ")
+                article_url = input(f"{str_prefix_ques} Article URL: ")
+                # TODO: Format URL here
+                cont = not yes_or_no(f"Is this correct: '{article_url}'? ")
             
             # Generate the current date and time in RSS format
             date_publish = datetime.datetime.now().astimezone().replace(microsecond=0).isoformat()
@@ -138,26 +153,26 @@ def main():
             lines_finished.append(f"\t</entry>")
             
             while True:
-                out_clipboard = yes_or_no("Copy to clipboard [y/n]? ")
-                out_file = yes_or_no("Copy to file [y/n]? ")
-                out_stdout = yes_or_no("Print output [y/n]? ")
+                out_clipboard = yes_or_no("Copy to clipboard? ")
+                out_file = yes_or_no("Copy to file? ")
+                out_stdout = yes_or_no("Print output? ")
                 if not (out_clipboard or out_file or out_stdout):
-                    print("You gotta pick something, dude.")
+                    print(f"{str_prefix_err} {error_no_out_choice}")
                 else:
                     if out_clipboard:
                         pyperclip.copy("\n".join(lines_finished))
-                        print(message_copied)
+                        print(f"{str_prefix_done} {message_copied}")
                     if out_file:
-                        str_file_name = input("File name for output: ")
+                        str_file_name = input(f"{str_prefix_ques} File name for output: ")
                         with open(str_file_name, "a") as output_file:
                             for line in lines_finished:
                                 output_file.write(f"{line}\n")
-                        print(f"Wrote to '{str_file_name}'")
+                        print(f"{str_prefix_done} Wrote to '{str_file_name}'")
                     if out_stdout:
                         print("\n".join(lines_finished))
                     break
         else: # If a file was given but it does not have a .HTML extension
-            print(message_incorrect_args)
+            print(f"{str_prefix_err} {error_incorrect_args}")
     sys.exit()
 
 
