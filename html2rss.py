@@ -78,6 +78,7 @@ def yes_or_no(str_ask):
             print(f"{str_prefix_err} {error_neither_y_n}")
 
 def main():
+    print("TODO: Program started")
     # ========= CONFIGURABLE VARIABLES =========
     author = "Hussein Esmail"
     label = "Hussein's Articles"
@@ -87,13 +88,19 @@ def main():
     
     auto_url = True         # Automatically guess URL to the post (user can still change when running)
     auto_url_template = "https://husseinesmail.xyz/articles/"   # + {HTML page}
-    # auto_rss_path = "/hdd1/Backups/Website/husseinesmail/rss.xml"
-    auto_rss_path = os.path.expanduser("~/Downloads/rss.xml")
+    # auto_rss_path = "/hdd1/Backups/Website/husseinesmail/rss.xml"     # TODO: Real one
+    auto_rss_path = os.path.expanduser("~/Downloads/husseinesmail/rss.xml")   # TODO: Test string (so I don't mess with the site)
     auto_rss_insert = "<!-- FEEDS START -->"
+
+    # Used to automatically add post to all/index.html
+    # auto_add_all_posts_path = "/hdd1/Backups/Website/husseinesmail/articles/all/index.html"
+    auto_add_all_posts_path = os.path.expanduser("~/Downloads/husseinesmail/articles/all/index.html")   # TODO: Test string (so I don't mess with the site)
+    auto_add_all_posts_header_tag = "h2"
 
     # ========= VARIABLES USED BY PROGRAM =========
     int_reached_end_of_body_tag = 0
     str_post_title  = ""    # Used later, must be in this scope
+    lines_all       = []    # Unformatted HTML from the post file.
     lines_wanted    = []    # Formatted lines will go here (after replacing escape codes)
     lines_finished  = []    # RSS post lines will go here (and lines from lines_wanted)
 
@@ -106,6 +113,7 @@ def main():
         if "-h" in sys.argv[-1] or "--help" in sys.argv[-1]:
             print("".join(message_help))
         elif sys.argv[-1].lower().endswith(".html"):
+            print("TODO: Confirmed HTML file")
             html_path = sys.argv[-1]
             lines_all = open(os.path.expanduser(html_path)).readlines()  # Read the HTML file
             # expanduser(): If user types "~" instead of home dir path
@@ -207,6 +215,28 @@ def main():
                         open(auto_rss_path, 'w').writelines(rss_lines_new)              # Overwrite RSS file with new lines (included all old lines)
                         print(f"{str_prefix_done} Wrote to '{auto_rss_path}'")          # Inform user that it's done
                     break
+            auto_add_all_posts = yes_or_no("Append post to 'all/'? ")
+            if auto_add_all_posts:
+                # TODO: Not Done
+                # Get created date for the post in question
+                # Read all/index.html page
+                # From all/, navigate to the month tag (h2)
+                # In that list, figure out which position the new <li> should be
+                # Insert it there, and write to all/, and change the edited date at the bottom (if there is any)
+                str_post_created = ""   # Created date will go here.
+                for line in reversed(lines_all):
+                    if "Created" in line and len(str_post_created) == 0:
+                        str_post_created = line.strip().split(" ")[-3:] # ex. ["2021", "04", "29"]
+
+                date_header_format = datetime.date(int(str_post_created[0]), int(str_post_created[1]), int(str_post_created[2])).strftime('%B %Y')
+                lines_all_file_original = open(auto_add_all_posts_path, 'r').readlines()
+                print(f"Looking for: <{auto_add_all_posts_header_tag}>{date_header_format}</{auto_add_all_posts_header_tag}>")
+                for position, line in enumerate(lines_all_file_original):
+                    # Look for the line where it indicates the proper month.
+                    if f"<{auto_add_all_posts_header_tag}>{date_header_format}</{auto_add_all_posts_header_tag}>" in line.strip():
+                        print(f"{date_header_format} is on line {position}")
+
+
         else: # If a file was given but it does not have a .HTML extension
             print(f"{str_prefix_err} {error_incorrect_args}")
     sys.exit()
