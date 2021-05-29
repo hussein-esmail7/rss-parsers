@@ -1,10 +1,12 @@
 '''
 html2rss.py by  Hussein Esmail
 Created: 2021 05 05
-Updated: 2021 05 10
-Description: This inputs an HTML file in the arguments and converts a copy of it to an RSS format where in-item URLs are supported in Newsboat (like on Reddit RSS pages, because if I prefer them then someone else probably does too).
+Updated: 2021 05 28
 '''
-
+description = [ "This inputs an HTML file in the arguments and converts a copy of it to\n",
+                "an RSS format where in-item URLs are supported in Newsboat (like on \n",
+                "Reddit RSS pages, because if I prefer them then someone else probably\n",
+                "does too).\n"]
 """
 Program Requirements (for now):
 - Title tag must be only in one line (ex: <h1>Title</h1>)
@@ -21,23 +23,23 @@ import pyperclip
 import validators
 
 # ========= COLOR CODES =========
-color_end       = '\033[0m'
-color_darkgrey  = '\033[90m'
-color_red       = '\033[91m'
-color_green     = '\033[92m'
-color_yellow    = '\033[93m'
-color_blue      = '\033[94m'
-color_pink      = '\033[95m'
-color_cyan      = '\033[96m'
-color_white     = '\033[97m'
-color_grey      = '\033[98m'
+color_end               = '\033[0m'
+color_darkgrey          = '\033[90m'
+color_red               = '\033[91m'
+color_green             = '\033[92m'
+color_yellow            = '\033[93m'
+color_blue              = '\033[94m'
+color_pink              = '\033[95m'
+color_cyan              = '\033[96m'
+color_white             = '\033[97m'
+color_grey              = '\033[98m'
 
 # ========= COLORED STRINGS =========
-str_prefix_q    = f"[{color_pink}Q{color_end}]"
-str_prefix_y_n  = f"[{color_pink}y/n{color_end}]"
-str_prefix_ques = f"{str_prefix_q}\t "
-str_prefix_err  = f"[{color_red}ERROR{color_end}]\t "
-str_prefix_done = f"[{color_green}DONE{color_end}]\t "
+str_prefix_q            = f"[{color_pink}Q{color_end}]"
+str_prefix_y_n          = f"[{color_pink}y/n{color_end}]"
+str_prefix_ques         = f"{str_prefix_q}\t "
+str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
+str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
 
 # ========= ERROR MESSAGE VARIABLES =========
 error_input_html        = "You need to input an HTML file to convert!"
@@ -49,7 +51,30 @@ error_no_out_choice     = "You gotta pick something, dude."
 error_neither_y_n       = "The first character must either be a 'y' or 'n'."
 error_invalid_url       = "This is not a valid URL."
 
+
+
+
+# ========= INFORMATION MESSAGES =========
 message_copied          = "Copied to clipboard."
+message_help            = [ "\n",
+                            "="*34 + " HTML 2 RSS " + "="*34 + "\n",
+                            "\n",
+                            "What is this:\n"
+                            f"\t{''.join(description)}\n",
+                            "Usage: \n",
+                            f"\tpython3 {__file__} <path_to_HTML_file>\n",
+                            "\n",
+                            "During program:\n",
+                            "\tYou are asked a series of questions in this order:\n"
+                            "\t1. Confirm title (keeps asking for next possible title if incorrect)\n",
+                            "\t2. Confirm URL of the original post (type URL if incorrect)\n",
+                            "\t3. Copy to RSS file (y/n, then confirm file. Type path if incorrect)?\n",
+                            "\t4. Copy output to clipboard?\n",
+                            "\t5. Copy output to new file?\n",
+                            "\t6. Print output?\n",
+                            "\n",
+                            "="*80 + "\n"]
+
 
 def yes_or_no(str_ask):
     while True:
@@ -90,7 +115,7 @@ def main():
             print(f"{str_prefix_err} {error_too_many_args}")
     else: # If this program received the proper number of arguments
         if "-h" in sys.argv[-1] or "--help" in sys.argv[-1]:
-            print("Help message here")
+            print("".join(message_help))
             # TODO: Write help message here.
         elif sys.argv[-1].lower().endswith(".html"):
             html_path = sys.argv[-1]
