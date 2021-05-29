@@ -12,14 +12,13 @@ Program Requirements (for now):
 
 """
 TODO:
-- URL formatting if user types 'test' for example
-- Automatically add to RSS file as an output method
 - Help page
 """
 
 import os, sys
 import datetime
 import pyperclip
+import validators
 
 # ========= COLOR CODES =========
 color_end       = '\033[0m'
@@ -41,15 +40,16 @@ str_prefix_err  = f"[{color_red}ERROR{color_end}]\t "
 str_prefix_done = f"[{color_green}DONE{color_end}]\t "
 
 # ========= ERROR MESSAGE VARIABLES =========
-error_input_html      = "You need to input an HTML file to convert!"
-error_too_many_args   = "You typed more arguments than I expected. Please verify and try again."
-error_not_an_int      = "I didn't like that input! Please type an int."
-error_incorrect_args  = "I don't know what you gave me... but it wasn't an HTML file."
-error_no_title        = "You didn't select a title. Please restart the program."
-error_no_out_choice   = "You gotta pick something, dude."
-error_neither_y_n     = "The first character must either be a 'y' or 'n'."
+error_input_html        = "You need to input an HTML file to convert!"
+error_too_many_args     = "You typed more arguments than I expected. Please verify and try again."
+error_not_an_int        = "I didn't like that input! Please type an int."
+error_incorrect_args    = "I don't know what you gave me... but it wasn't an HTML file."
+error_no_title          = "You didn't select a title. Please restart the program."
+error_no_out_choice     = "You gotta pick something, dude."
+error_neither_y_n       = "The first character must either be a 'y' or 'n'."
+error_invalid_url       = "This is not a valid URL."
 
-message_copied        = "Copied to clipboard."
+message_copied          = "Copied to clipboard."
 
 def yes_or_no(str_ask):
     while True:
@@ -134,8 +134,12 @@ def main():
             while cont: # Keep asking for URL until user confirms it is correct.
                 article_url = input(f"{str_prefix_ques} Article URL: ")
                 # TODO: Format URL here
-                cont = not yes_or_no(f"Is this correct: '{article_url}'? ")
-            
+                if not article_url.startswith("https://") or not article_url.startswith("http://"):
+                    article_url = "http://" + article_url
+                if validators.url(article_url):
+                    cont = not yes_or_no(f"Is this correct: '{article_url}'? ")
+                else:
+                    print(f"{str_prefix_err} {error_invalid_url}")
             # Generate the current date and time in RSS format
             date_publish = datetime.datetime.now().astimezone().replace(microsecond=0).isoformat()
 
