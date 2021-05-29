@@ -73,7 +73,8 @@ def main():
     auto_url_template = "https://husseinesmail.xyz/articles/"   # + {HTML page}
     # TODO: Implement variables below
     auto_rss_add = True
-    auto_rss_path = "/hdd1/Backups/Website/husseinesmail/rss.xml"
+    # auto_rss_path = "/hdd1/Backups/Website/husseinesmail/rss.xml"
+    auto_rss_path = os.path.expanduser("~/Downloads/rss.xml")
     auto_rss_insert = "<!-- FEEDS START -->"
 
     # ========= VARIABLES USED BY PROGRAM =========
@@ -152,25 +153,43 @@ def main():
                 lines_finished.append(f"\t\t{i[:-1]}")
             lines_finished.append(f"\t\t</content>")
             lines_finished.append(f"\t</entry>")
-            
+            lines_finished = [line + "\n" for line in lines_finished]
+
             while True:
-                out_clipboard = yes_or_no("Copy to clipboard? ")
-                out_file = yes_or_no("Copy to file? ")
-                out_stdout = yes_or_no("Print output? ")
-                if not (out_clipboard or out_file or out_stdout):
+                out_rss         = yes_or_no("Add to RSS file? ")
+                out_clipboard   = yes_or_no("Copy output to clipboard? ")
+                out_file        = yes_or_no("Copy output to new file? ")
+                out_stdout      = yes_or_no("Print output here? ")
+                if out_rss:
+                    if not yes_or_no(f"Is this the correct RSS file: '{auto_rss_path}'? "):
+                        auto_rss_path = ""
+                        while not os.path.exists(os.path.expanduser(auto_rss_path)):
+                            auto_rss_path = input(f"{str_prefix_ques} What is the file path? ")
+                            if not os.path.exists(os.path.expanduser(auto_rss_path)):
+                                print(f"{str_prefix_err} Not a path!")
+                if not (out_clipboard or out_file or out_stdout or out_rss):
                     print(f"{str_prefix_err} {error_no_out_choice}")
                 else:
-                    if out_clipboard:
-                        pyperclip.copy("\n".join(lines_finished))
-                        print(f"{str_prefix_done} {message_copied}")
-                    if out_file:
+                    if out_clipboard:                                               # Copy to clipboard
+                        pyperclip.copy("".join(lines_finished))                         # Copy all the lines as one string
+                        print(f"{str_prefix_done} {message_copied}")                    # Inform user that it's done
+                    if out_file:                                                    # Copy to new file
                         str_file_name = input(f"{str_prefix_ques} File name for output: ")
-                        with open(str_file_name, "a") as output_file:
-                            for line in lines_finished:
-                                output_file.write(f"{line}\n")
-                        print(f"{str_prefix_done} Wrote to '{str_file_name}'")
-                    if out_stdout:
-                        print("\n".join(lines_finished))
+                        open(str_file_name, "a").writelines(lines_finished)             # Write to new file (append)
+                        print(f"{str_prefix_done} Wrote to '{str_file_name}'")          # Inform user that it's done
+                    if out_stdout:                                                  # Print the new lines
+                        print("".join(lines_finished))
+                        # Requires no notification to user that it's done (it will literally be right there).
+                    if out_rss:                                                     # Add to RSS feed
+                        # This is after out_stdout so that the user sees that this will be done too 
+                        # (and won't have to search for the DONE message)
+                        rss_lines = open(auto_rss_path, 'r').readlines()                # Read the current RSS
+                        rss_lines_strip = [line.strip() for line in rss_lines]          # Get striped lines of RSS
+                        rss_insert_line_index = rss_lines_strip.index(auto_rss_insert)  # Find where the delimiter is
+                        # Join the arrays: {RSS lines before delimiter + delimiter} + {new lines} + {RSS lines after delimiter}
+                        rss_lines_new = rss_lines[:rss_insert_line_index+1] + lines_finished + rss_lines[rss_insert_line_index+1:]
+                        open(auto_rss_path, 'w').writelines(rss_lines_new)              # Overwrite RSS file with new lines (included all old lines)
+                        print(f"{str_prefix_done} Wrote to '{auto_rss_path}'")          # Inform user that it's done
                     break
         else: # If a file was given but it does not have a .HTML extension
             print(f"{str_prefix_err} {error_incorrect_args}")
