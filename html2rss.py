@@ -7,15 +7,6 @@ description = [ "This inputs an HTML file in the arguments and converts a copy o
                 "an RSS format where in-item URLs are supported in Newsboat (like on \n",
                 "Reddit RSS pages, because if I prefer them then someone else probably\n",
                 "does too).\n"]
-"""
-Program Requirements (for now):
-- Title tag must be only in one line (ex: <h1>Title</h1>)
-"""
-
-"""
-TODO:
-- Help page
-"""
 
 import os, sys
 import datetime
@@ -42,7 +33,7 @@ str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
 str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
 
 # ========= ERROR MESSAGE VARIABLES =========
-error_input_html        = "You need to input an HTML file to convert!"
+error_input_html        = "You need to input an HTML file to convert.\n\t  Type -h or --help for help."
 error_too_many_args     = "You typed more arguments than I expected. Please verify and try again."
 error_not_an_int        = "I didn't like that input! Please type an int."
 error_incorrect_args    = "I don't know what you gave me... but it wasn't an HTML file."
@@ -50,9 +41,6 @@ error_no_title          = "You didn't select a title. Please restart the program
 error_no_out_choice     = "You gotta pick something, dude."
 error_neither_y_n       = "The first character must either be a 'y' or 'n'."
 error_invalid_url       = "This is not a valid URL."
-
-
-
 
 # ========= INFORMATION MESSAGES =========
 message_copied          = "Copied to clipboard."
@@ -72,6 +60,9 @@ message_help            = [ "\n",
                             "\t4. Copy output to clipboard?\n",
                             "\t5. Copy output to new file?\n",
                             "\t6. Print output?\n",
+                            "\n",
+                            "Program Requirements (for now):\n",
+                            "\tTitle tag must be only in one line (ex: <h1>Title</h1>)\n",
                             "\n",
                             "="*80 + "\n"]
 
@@ -96,8 +87,6 @@ def main():
     
     auto_url = True         # Automatically guess URL to the post (user can still change when running)
     auto_url_template = "https://husseinesmail.xyz/articles/"   # + {HTML page}
-    # TODO: Implement variables below
-    auto_rss_add = True
     # auto_rss_path = "/hdd1/Backups/Website/husseinesmail/rss.xml"
     auto_rss_path = os.path.expanduser("~/Downloads/rss.xml")
     auto_rss_insert = "<!-- FEEDS START -->"
@@ -116,7 +105,6 @@ def main():
     else: # If this program received the proper number of arguments
         if "-h" in sys.argv[-1] or "--help" in sys.argv[-1]:
             print("".join(message_help))
-            # TODO: Write help message here.
         elif sys.argv[-1].lower().endswith(".html"):
             html_path = sys.argv[-1]
             lines_all = open(os.path.expanduser(html_path)).readlines()  # Read the HTML file
@@ -158,7 +146,6 @@ def main():
                     article_url = article_url_tmp
             while cont: # Keep asking for URL until user confirms it is correct.
                 article_url = input(f"{str_prefix_ques} Article URL: ")
-                # TODO: Format URL here
                 if not article_url.startswith("https://") or not article_url.startswith("http://"):
                     article_url = "http://" + article_url
                 if validators.url(article_url):
