@@ -12,6 +12,7 @@ import os, sys
 import datetime
 import pyperclip
 import validators
+import re
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -96,6 +97,8 @@ def main():
     # auto_add_all_posts_path = "/hdd1/Backups/Website/husseinesmail/articles/all/index.html"
     auto_add_all_posts_path = os.path.expanduser("~/Downloads/husseinesmail/articles/all/index.html")   # TODO: Test string (so I don't mess with the site)
     auto_add_all_posts_header_tag = "h2"
+    auto_add_all_posts_header_line = -1 # Header line of the month in the all/ file.
+    auto_add_all_posts_list_tag = "<li>"
 
     # ========= VARIABLES USED BY PROGRAM =========
     int_reached_end_of_body_tag = 0
@@ -235,6 +238,41 @@ def main():
                     # Look for the line where it indicates the proper month.
                     if f"<{auto_add_all_posts_header_tag}>{date_header_format}</{auto_add_all_posts_header_tag}>" in line.strip():
                         print(f"{date_header_format} is on line {position}")
+                        auto_add_all_posts_header_line = position
+                if auto_add_all_posts_header_line == -1:
+                    # That specific month doesn't exist, add it here
+                    # TODO: For now assume it doesn't work
+                    print("NOT DONE")
+                else:
+                    # If it is found
+                    position_next_month = -1
+                    for position, line in enumerate(lines_all_file_original[auto_add_all_posts_header_line:]):
+                        if auto_add_all_posts_header_tag in line or "</body>" in line:
+                            position_next_month = position
+
+                    lines_add_all_post_in_month = lines_all_file_original[auto_add_all_posts_header_line:position_next_month]
+                    lines_add_all_post_in_month_str = "".join(lines_add_all_post_in_month)
+                    matches = re.finditer(auto_add_all_posts_list_tag, lines_add_all_post_in_month_str)
+                    matches_positions = [match.start() for match in matches]
+                    bool_found_date_position = False
+                    line_add_all_line_new = f"{auto_add_all_posts_list_tag}<a href=\"{article_url}\">{article_url}</a>{auto_add_all_posts_list_tag[0]}/{auto_add_all_posts_list_tag[1:]}"
+                    for match in matches_positions:
+                        # For every <li> (index is at the '<')
+                        # Find the dates that are in each of these <li>
+                        # If the found date is later, check the one after, if it is before or no more, add there.
+                        if not bool_found_date_position:
+                            date_in_question = lines_add_all_post_in_month_str[match+len(auto_add_all_posts_list_tag):10]
+                            if date_in_question > " ".join(str_post_created):   # If it is after
+                                # add before
+                                lines_add_all_post_in_month_str = lines_add_all_post_in_month_str[:match-1] + line_add_all_line_new + lines_add_all_post_in_month_str[match:]
+                                bool_found_date_position = True
+                            # If it is earlier or the same date, do nothing and go to next pos
+
+
+
+
+
+
 
 
         else: # If a file was given but it does not have a .HTML extension
