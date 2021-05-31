@@ -14,6 +14,8 @@ import pyperclip
 import validators
 import re
 
+# TODO: Redo the all/ section and recompile the whole page automatically using CSV to keep track of the posts.
+
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
 color_darkgrey          = '\033[90m'
@@ -79,7 +81,6 @@ def yes_or_no(str_ask):
             print(f"{str_prefix_err} {error_neither_y_n}")
 
 def main():
-    print("TODO: Program started")
     # ========= CONFIGURABLE VARIABLES =========
     author = "Hussein Esmail"
     label = "Hussein's Articles"
@@ -117,7 +118,6 @@ def main():
         if "-h" in sys.argv[-1] or "--help" in sys.argv[-1]:
             print("".join(message_help))
         elif sys.argv[-1].lower().endswith(".html"):
-            print("TODO: Confirmed HTML file")
             html_path = sys.argv[-1]
             lines_all = open(os.path.expanduser(html_path)).readlines()  # Read the HTML file
             # expanduser(): If user types "~" instead of home dir path
@@ -242,14 +242,14 @@ def main():
                 str_post_created = ""   # Created date of the post to add will go here.
                 for line in reversed(lines_all):
                     if "Created" in line and len(str_post_created) == 0:
-                        str_post_created = line.strip().split(" ")[-3:] # ex. ["2021", "04", "29"]
+                        str_post_created = line.strip()[:10] # ex. "2021 04 29"
 
                 # Line to add somewhere in the middle
                 line_add_all_line_new = ["\t\t<li>\n", 
-                                            f"\t\t\t{' '.join(str_post_created)}: <a href=\"../{article_url.split('/')[-1]}\">{str_post_title}</a>\n", 
+                                            f"\t\t\t{str_post_created}: <a href=\"../{article_url.split('/')[-1]}\">{str_post_title}</a>\n", 
                                             "\t\t</li>\n"]
 
-                date_header_format = datetime.date(int(str_post_created[0]), int(str_post_created[1]), int(str_post_created[2])).strftime('%B %Y')
+                date_header_format = datetime.date(int(str_post_created.split(" ")[0]), int(str_post_created.split(" ")[1]), int(str_post_created.split(" ")[2])).strftime('%B %Y')
                 lines_all_file_original = open(auto_add_all_posts_path, 'r').readlines()
                 # print(f"Looking for: '<{auto_add_all_posts_header_tag}>{date_header_format}</{auto_add_all_posts_header_tag}>'")
                 bool_found_current_month    = False
@@ -257,7 +257,6 @@ def main():
                 for position, line in enumerate(lines_all_file_original):
                     # Look for the line where it indicates the proper month.
                     if bool_found_current_month and not bool_found_next_month and (auto_add_all_posts_header_tag in line.strip() or "</body>" in line.strip()):
-                        # print(f"Line {position}: '{line.strip()}'")
                         bool_found_next_month = True
                         auto_add_all_posts_header_line_next = position + 1
                     if not bool_found_current_month and f"<{auto_add_all_posts_header_tag}>{date_header_format}</{auto_add_all_posts_header_tag}>" in line.strip():
@@ -313,9 +312,9 @@ def main():
                         date_in_question = lines_add_all_post_in_month_str[match+len(auto_add_all_posts_list_tag):match+len(auto_add_all_posts_list_tag)+10].strip()
                         if not bool_found_date_position and len(date_in_question) > 0:
                             print(f"Date: '{date_in_question}'")
-                            if date_in_question < " ".join(str_post_created):   # If the examined line is after the date of the post we want to add
+                            if date_in_question < str_post_created:   # If the examined line is after the date of the post we want to add
                                 # add the new line before this
-                                # print(f"{date_in_question} is after {' '.join(str_post_created)}")
+                                # print(f"{date_in_question} is after {str_post_created}")
 
                                 # Text after the new post:
                                 text_after = lines_add_all_post_in_month_str[match:]
@@ -327,7 +326,7 @@ def main():
                                 lines_add_all_post_in_month_str =  '\t<ul>\n'.join(lines_add_all_post_in_month_str[:match].rsplit("<ul>", 1)) + ''.join(line_add_all_line_new) + text_after
                                 
                                 bool_found_date_position = True
-                            elif date_in_question >= " ".join(str_post_created):
+                            elif date_in_question >= str_post_created:
                                 # If the examined line is before the date of the post we want to add (most cases)
                                 print("NOT DONE")
                             # If it is earlier or the same date, do nothing and go to next pos
