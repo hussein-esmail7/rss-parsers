@@ -228,23 +228,36 @@ def main():
                 # In that list, figure out which position the new <li> should be
                 # Insert it there, and write to all/, and change the edited date at the bottom (if there is any)
 
-                # Line to add somewhere in the middle
-                line_add_all_line_new = f"{auto_add_all_posts_list_tag}<a href=\"../{article_url.split('/')[-1]}\">{article_url}</a>{auto_add_all_posts_list_tag[0]}/{auto_add_all_posts_list_tag[1:]}"
+                """
+                Things to fix about the insert text
+                - There are no line breaks
+                - tab on first <ul>
+                - <ul> missing >
+                - Enter + tab after <ul>
+                - Enter + tab after <li>
+                - Enter + tab after </li>
+                - Enter + tab after </ul>
+                """
 
-                str_post_created = ""   # Created date will go here.
+                str_post_created = ""   # Created date of the post to add will go here.
                 for line in reversed(lines_all):
                     if "Created" in line and len(str_post_created) == 0:
                         str_post_created = line.strip().split(" ")[-3:] # ex. ["2021", "04", "29"]
 
+                # Line to add somewhere in the middle
+                line_add_all_line_new = ["\t\t<li>\n", 
+                                            f"\t\t\t{' '.join(str_post_created)}: <a href=\"../{article_url.split('/')[-1]}\">{str_post_title}</a>\n", 
+                                            "\t\t</li>\n"]
+
                 date_header_format = datetime.date(int(str_post_created[0]), int(str_post_created[1]), int(str_post_created[2])).strftime('%B %Y')
                 lines_all_file_original = open(auto_add_all_posts_path, 'r').readlines()
-                print(f"Looking for: '<{auto_add_all_posts_header_tag}>{date_header_format}</{auto_add_all_posts_header_tag}>'")
+                # print(f"Looking for: '<{auto_add_all_posts_header_tag}>{date_header_format}</{auto_add_all_posts_header_tag}>'")
                 bool_found_current_month    = False
                 bool_found_next_month       = False
                 for position, line in enumerate(lines_all_file_original):
                     # Look for the line where it indicates the proper month.
                     if bool_found_current_month and not bool_found_next_month and (auto_add_all_posts_header_tag in line.strip() or "</body>" in line.strip()):
-                        print(f"Line {position}: '{line.strip()}'")
+                        # print(f"Line {position}: '{line.strip()}'")
                         bool_found_next_month = True
                         auto_add_all_posts_header_line_next = position + 1
                     if not bool_found_current_month and f"<{auto_add_all_posts_header_tag}>{date_header_format}</{auto_add_all_posts_header_tag}>" in line.strip():
@@ -262,13 +275,29 @@ def main():
                     lines_add_all_post_in_month = lines_all_file_original[auto_add_all_posts_header_line:auto_add_all_posts_header_line_next]
 
                     # The lines in the month section that we want to edit (as string)
-                    lines_add_all_post_in_month_str = "".join([line.strip() for line in lines_add_all_post_in_month])
+                    lines_add_all_post_in_month_str = "".join(lines_add_all_post_in_month)
 
                     # print(f"lines_all_file_original[{auto_add_all_posts_header_line}:{auto_add_all_posts_header_line_next}] below:")
                     # print(f"Length: {len(lines_add_all_post_in_month_str)}")
                     # print(lines_add_all_post_in_month_str)
                     
                     # Indexes from the string <li>, to find where each date is in the list already
+                    """
+                    TODO: Issue - When the lines are formatted as:
+                    s
+                    <li>
+                        2021 04 29: ---
+                    </li>,
+
+                    it doesn't recognize the date in the re.--- because it looks 10 characters 
+                    until after <li> but that's just tabs because of the next line spaces.
+                    It does work when it is like this:
+
+                    <li>2021 04 29: ---
+                    </li>, 
+
+                    because it is on the same line and no spaces between
+                    """
                     matches = re.finditer(auto_add_all_posts_list_tag, lines_add_all_post_in_month_str)
                     matches_positions = [match.start() for match in matches]
 
@@ -282,19 +311,36 @@ def main():
                         # Find the dates that are in each of these <li>
                         # If the found date is later, check the one after, if it is before or no more, add there.
                         date_in_question = lines_add_all_post_in_month_str[match+len(auto_add_all_posts_list_tag):match+len(auto_add_all_posts_list_tag)+10].strip()
-                        print(f"Date: '{date_in_question}'")
-                        if not bool_found_date_position and len(date_in_question) > 0 and date_in_question >= " ".join(str_post_created):   # If it is after
-                            # add the new line before this
-                            print(f"{date_in_question} is after {' '.join(str_post_created)}")
-                            lines_add_all_post_in_month_str = lines_add_all_post_in_month_str[:match-1] + line_add_all_line_new + lines_add_all_post_in_month_str[match:]
-                            bool_found_date_position = True
+                        if not bool_found_date_position and len(date_in_question) > 0:
+                            print(f"Date: '{date_in_question}'")
+                            if date_in_question < " ".join(str_post_created):   # If the examined line is after the date of the post we want to add
+                                # add the new line before this
+                                # print(f"{date_in_question} is after {' '.join(str_post_created)}")
 
-                        # If it is earlier or the same date, do nothing and go to next pos
+                                # Text after the new post:
+                                text_after = lines_add_all_post_in_month_str[match:]
+                                # text_after = "\t\t<li>\n\t\t\t".join(text_after.split("<li>", 1))
+                                # text_after = "\n\t\t</li>\n\t".join(text_after.split("</li>", 1))
+                                # text_after = "\n\t<h2>".join(text_after.split("<h2>", 1))
+                                # text_after = "</h2>\n".join(text_after.split("</h2>", 1))
+
+                                lines_add_all_post_in_month_str =  '\t<ul>\n'.join(lines_add_all_post_in_month_str[:match].rsplit("<ul>", 1)) + ''.join(line_add_all_line_new) + text_after
+                                
+                                bool_found_date_position = True
+                            elif date_in_question >= " ".join(str_post_created):
+                                # If the examined line is before the date of the post we want to add (most cases)
+                                print("NOT DONE")
+                            # If it is earlier or the same date, do nothing and go to next pos
+                        elif len(date_in_question) == 0:
+                            print("Empty date found.")
+                            print(f"bool_found_date_position: {bool_found_date_position}")
                     
                     # Convert the one-line HTML back to formatted HTML (with tabs and new lines)
-                    lines_add_all_post_in_month_str.replace(auto_add_all_posts_header_tag, f"\t{auto_add_all_posts_header_tag}").replace(f"{auto_add_all_posts_list_tag[0]}/{auto_add_all_posts_list_tag[1:]}", f"{auto_add_all_posts_list_tag[0]}/{auto_add_all_posts_list_tag[1:]}\n").replace(auto_add_all_posts_list_tag, f"\t\t{auto_add_all_posts_list_tag}").replace("</ul>", "\t</ul>\n").replace("<ul>", "\t<ul>\n")
+                    # lines_add_all_post_in_month_str.replace(auto_add_all_posts_header_tag, f"\t{auto_add_all_posts_header_tag}").replace(f"{auto_add_all_posts_list_tag[0]}/{auto_add_all_posts_list_tag[1:]}", f"{auto_add_all_posts_list_tag[0]}/{auto_add_all_posts_list_tag[1:]}\n").replace(auto_add_all_posts_list_tag, f"\t\t{auto_add_all_posts_list_tag}").replace("</ul>", "\t</ul>\n").replace("<ul>", "\t<ul>\n")
 
+                    # This doesn't work because adding to '\n' to each of a string is 1 char /line
                     # lines_add_all_post_in_month_str = [line + "\n" for line in lines_add_all_post_in_month_str] # Add "\n" at the end of each line
+
                     lines_all_file_new = lines_all_file_original[:auto_add_all_posts_header_line] 
                     lines_all_file_new += lines_add_all_post_in_month_str 
                     lines_all_file_new += lines_all_file_original[auto_add_all_posts_header_line_next:]
@@ -304,13 +350,6 @@ def main():
 
                     # Inform user that it's done
                     print(f"{str_prefix_done} Added to all/")
-
-
-
-
-
-
-
 
 
         else: # If a file was given but it does not have a .HTML extension
