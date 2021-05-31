@@ -227,6 +227,10 @@ def main():
                 # From all/, navigate to the month tag (h2)
                 # In that list, figure out which position the new <li> should be
                 # Insert it there, and write to all/, and change the edited date at the bottom (if there is any)
+
+                # Line to add somewhere in the middle
+                line_add_all_line_new = f"{auto_add_all_posts_list_tag}<a href=\"../{article_url.split('/')[-1]}\">{article_url}</a>{auto_add_all_posts_list_tag[0]}/{auto_add_all_posts_list_tag[1:]}"
+
                 str_post_created = ""   # Created date will go here.
                 for line in reversed(lines_all):
                     if "Created" in line and len(str_post_created) == 0:
@@ -271,21 +275,20 @@ def main():
                     # print(f"Matches index for '{auto_add_all_posts_list_tag}': {matches_positions}")
                     # print(f"Match 1: {lines_add_all_post_in_month_str[matches_positions[0]:matches_positions[0]+10]}")
 
-                    # Line to add somewhere in the middle
-                    line_add_all_line_new = f"{auto_add_all_posts_list_tag}<a href=\"{article_url}\">{article_url}</a>{auto_add_all_posts_list_tag[0]}/{auto_add_all_posts_list_tag[1:]}"
-                    
                     # This loop determine between which two lines to put the new line
                     bool_found_date_position = False
                     for match in matches_positions:
                         # For every <li> (index is at the '<')
                         # Find the dates that are in each of these <li>
                         # If the found date is later, check the one after, if it is before or no more, add there.
-                        date_in_question = lines_add_all_post_in_month_str[match+len(auto_add_all_posts_list_tag):10]
-                        print(f"Date: {date_in_question}")
-                        if not bool_found_date_position and date_in_question > " ".join(str_post_created):   # If it is after
+                        date_in_question = lines_add_all_post_in_month_str[match+len(auto_add_all_posts_list_tag):match+len(auto_add_all_posts_list_tag)+10].strip()
+                        print(f"Date: '{date_in_question}'")
+                        if not bool_found_date_position and len(date_in_question) > 0 and date_in_question >= " ".join(str_post_created):   # If it is after
                             # add the new line before this
+                            print(f"{date_in_question} is after {' '.join(str_post_created)}")
                             lines_add_all_post_in_month_str = lines_add_all_post_in_month_str[:match-1] + line_add_all_line_new + lines_add_all_post_in_month_str[match:]
                             bool_found_date_position = True
+
                         # If it is earlier or the same date, do nothing and go to next pos
                     
                     # Convert the one-line HTML back to formatted HTML (with tabs and new lines)
