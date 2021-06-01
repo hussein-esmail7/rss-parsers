@@ -13,6 +13,7 @@ import datetime
 import pyperclip
 import validators
 import csv
+import operator
 
 # TODO: Redo the all/ section and recompile the whole page automatically using CSV to keep track of the posts.
 
@@ -88,6 +89,8 @@ def main():
     term = "Articles"
     tag_type_title = "h1"   # Will automatically be the title tag of the RSS post
     char_placehold = "|"    # This character is used in determining what's inside the title tag
+    site_created_date = "2021 05 06"
+    site_domain = "husseinesmail.xyz"
     
     auto_url = True         # Automatically guess URL to the post (user can still change when running)
     auto_url_template = "https://husseinesmail.xyz/articles/"   # + {HTML page}
@@ -229,46 +232,75 @@ def main():
                 
                 # Open CSV file and read contents. Format: Date, Title, URL
                 lines_csv = list(csv.reader(open(auto_add_all_posts_csv)))
-                
-                # Add new post where it belongs (in order)
-                bool_post_add_csv_line = -1
-                for position, line in enumerate(lines_csv[1:]): # lines_csv[1:] because index 0 are the column names
-                    # print(f"{str_prefix_info} Data: {line}")
-                    if str_post_created < line[0] and bool_post_add_csv_line == -1:
-                        # print(f"{str_prefix_info} {line[0]} is after post date ({str_post_created})")
-                        bool_post_add_csv_line = position
-                        print(f"{str_prefix_info} Line to put post: {bool_post_add_csv_line}")
-                
-                if bool_post_add_csv_line == -1:
-                    # If the post needs to be added to the bottom (it is the newest date out of all post dates)
-                    bool_post_add_csv_line = len(lines_csv) - 1
-                
-                """ # Put the new post in its correct spot
-                print(new_post_entry_csv)
-                lines_csv = lines_csv[:bool_post_add_csv_line] + new_post_entry_csv + lines_csv[bool_post_add_csv_line:] 
-                print("CSV NEW LINES:")
-                for line in lines_csv:
-                    print(line) """
+                article_url_relative = article_url.split(site_domain)[-1]
+                lines_csv.append([str_post_created, str_post_title, article_url_relative])   # Add new post
+                print(f"Added [{str_post_created}, {str_post_title}, {article_url_relative}]")
+                lines_csv[1:] = sorted(lines_csv[1:], key=operator.itemgetter(0))   # Sort by first column
 
                 # Save CSV file
                 with open(auto_add_all_posts_csv, 'w', newline='') as file:
                     writer = csv.writer(file)
-                    writer.writerows(lines_csv[:bool_post_add_csv_line])
-                    writer.writerow([str_post_created, str_post_title, article_url])
-                    writer.writerows(lines_csv[bool_post_add_csv_line:])
-                print(f"{str_prefix_info} Wrote new .csv file (line {bool_post_add_csv_line})")
+                    writer.writerows(lines_csv)
                 
-                for i in list(csv.reader(open(auto_add_all_posts_csv))):
-                    print(i)
+                lines_html = []
+                lines_html.append(f'<!DOCTYPE html>\n')
+                lines_html.append(f'<html lang="en-us">\n')
+                lines_html.append(f'\n')
+                lines_html.append(f'<head>\n')
+                lines_html.append(f'\t<title>Articles</title>\n')
+                lines_html.append(f'\t<link rel="stylesheet" type="text/css" href="/style.css" media="screen"/>\n')
+                lines_html.append(f'\t<meta charset="utf-8">\n')
+                lines_html.append(f'\t<meta name="viewport" content="width=device-width, initial-scale=1">\n')
+                lines_html.append(f'</head>\n')
+                lines_html.append(f'<body>\n')
+                lines_html.append(f'\t<h1><a class="stealth-url" href="/">Hussein Esmail</a></h1>\n')
+                lines_html.append(f'\t<div class="nav">\n')
+                lines_html.append(f'\t\t<header>\n')
+                lines_html.append(f'\t\t\t<ul class="nav-ul">\n')
+                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/about"    title="About">About</a></li>\n')
+                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/articles" title="Articles">Articles</a></li>\n')
+                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/books"    title="Books">Books</a></li>\n')
+                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/guides"   title="Theatre Guides">Theatre Guides</a></li>\n')
+                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/rss.xml"  title="RSS">RSS</a></li>\n')
+                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/contact"  title="Contact">Contact</a></li>\n')
+                lines_html.append(f'\t\t\t</ul>\n')
+                lines_html.append(f'\t\t</header>\n')
+                lines_html.append(f'\t</div>\n')
+                lines_html.append(f'\t<h1>All Article Posts</h1>\n')
+                
+                last_year    = "0"
+                last_month   = "0"
                 # Split rows in CSV by month
-                # for each month section:
-                #   Sort them in reverse chronological order (newest first)
-                #   Add an <h2> with month name
-                #   Make a <ul> out of them
-                # Change edited date + Keep created date in footer
-                
-                # print(f"{str_prefix_done} Added to all/")
+                for line in reversed(lines_csv[1:]): # lines_csv[1:] because index 0 are the column names
+                    current_year = line[0].split(" ")[0]
+                    current_month = line[0].split(" ")[1]
+                    if current_month != last_month or current_year != last_year:    # New month/year
+                        if not (last_month == "0" and last_year == "0"):            # If not first post, close the old list.
+                            lines_html.append("\t</ul>\n")
+                        current_month_name = datetime.datetime.strptime(current_month, "%m").strftime("%B") # Month as text
+                        lines_html.append(f"\t<{auto_add_all_posts_header_tag}>{current_month_name} {current_year}</{auto_add_all_posts_header_tag}>\n")
+                        lines_html.append("\t<ul>\n")
+                    lines_html.append("\t\t<li>\n")
+                    lines_html.append(f'\t\t\t{line[0]}: <a href="{line[2]}">{line[1]}</a>\n')
+                    lines_html.append("\t\t</li>\n")
+                    last_month = current_month
+                    last_year = current_year
+                lines_html.append("\t</ul>\n")  # At the end, close the last open list
+                lines_html.append('</body>\n')
+                lines_html.append('<footer>\n')
+                lines_html.append('\t<br>\n')
+                lines_html.append('\t<p>\n')
+                lines_html.append(f'\t\tCreated: &nbsp; {site_created_date}\n')
+                lines_html.append('\t</p>\n')
+                lines_html.append('\t<br>\n')
+                lines_html.append('\t<p>\n')
+                lines_html.append(f'\t\tEdited: &nbsp; &nbsp;  {datetime.datetime.now().strftime("%Y %m %d")}\n')
+                lines_html.append('\t</p>\n')
+                lines_html.append('</footer>\n')
+                lines_html.append('</html>\n')
 
+                open(auto_add_all_posts_path, 'w').writelines(lines_html)
+                print(f"{str_prefix_done} Added to all/")
 
         else: # If a file was given but it does not have a .HTML extension
             print(f"{str_prefix_err} {error_incorrect_args}")
