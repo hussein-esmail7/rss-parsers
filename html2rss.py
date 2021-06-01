@@ -48,7 +48,9 @@ error_neither_y_n       = "The first character must either be a 'y' or 'n'."
 error_invalid_url       = "This is not a valid URL."
 
 # ========= INFORMATION MESSAGES =========
-message_copied          = "Copied to clipboard."
+message_rss_done        = "Wrote to RSS"
+message_copied          = "Copied RSS text to clipboard."
+message_new_file_done   = "Wrote RSS text to new file"
 message_help            = [ "\n",
                             "="*34 + " HTML 2 RSS " + "="*34 + "\n",
                             "\n",
@@ -79,38 +81,37 @@ def yes_or_no(str_ask):
             return True
         elif y_n[0] == "n":
             return False
+        elif y_n[0] == "q":
+            sys.exit()
         else:
             print(f"{str_prefix_err} {error_neither_y_n}")
 
 def main():
     # ========= CONFIGURABLE VARIABLES =========
-    author = "Hussein Esmail"
-    label = "Hussein's Articles"
-    term = "Articles"
-    tag_type_title = "h1"   # Will automatically be the title tag of the RSS post
-    char_placehold = "|"    # This character is used in determining what's inside the title tag
-    site_created_date = "2021 05 06"
-    site_domain = "husseinesmail.xyz"
-    
-    auto_url = True         # Automatically guess URL to the post (user can still change when running)
-    auto_url_template = "https://husseinesmail.xyz/articles/"   # + {HTML page}
-    # auto_rss_path = "/hdd1/Backups/Website/husseinesmail/rss.xml"     # TODO: Real one
-    auto_rss_path = os.path.expanduser("~/Downloads/husseinesmail/rss.xml")   # TODO: Test string (so I don't mess with the site)
-    auto_rss_insert = "<!-- FEEDS START -->"
-
-    # Used to automatically add post to all/index.html
-    # auto_add_all_posts_path   = "/hdd1/Backups/Website/husseinesmail/articles/all/index.html"
-    # auto_add_all_posts_csv    = "/hdd1/Backups/Website/husseinesmail/articles/articles.csv"
-    auto_add_all_posts_path = os.path.expanduser("~/Downloads/husseinesmail/articles/all/index.html")   # TODO: Test string (so I don't mess with the site)
-    auto_add_all_posts_csv  = os.path.expanduser("~/Downloads/husseinesmail/articles/articles.csv")     # TODO: Test string (so I don't mess with the site)
-    auto_add_all_posts_header_tag = "h2"
+    url_domain          = "husseinesmail.xyz"
+    url_prefix          = f"https://{url_domain}/articles/"   # Used for guessing the future URL of the post. Used for all/ compiling and RSS
+    rss_author          = "Hussein Esmail"      # Used for RSS feed posts
+    rss_label           = "Hussein's Articles"  # Used for RSS feed posts
+    rss_term            = "Articles"            # Used for RSS feed posts
+    tag_type_title      = "h1"                  # Used for RSS feed posts - Will automatically be the title tag of the RSS post
+    char_placehold      = "|"                   # This character is used in determining what's inside the title tag
+    rss_path            = f"/hdd1/Backups/Website/{url_domain.split('.')[0]}/rss.xml"
+    rss_insert_pos      = "<!-- FEEDS START -->"    # Used for RSS feed posts - Where to insert after
+    all_created_date    = "2021 05 06"          # Used for recompiling '/articles/all/index.html'
+    all_file_path       = f"/hdd1/Backups/Website/{url_domain.split('.')[0]}/articles/all/index.html"
+    all_file_csv        = f"/hdd1/Backups/Website/{url_domain.split('.')[0]}/articles/articles.csv"
+    all_month_header    = "h2"        # Used for all/
 
     # ========= VARIABLES USED BY PROGRAM =========
-    int_reached_end_of_body_tag = 0
+    reached_end_of_body = False # Used when reading input HTML file
     str_post_title  = ""    # Used later, must be in this scope
     lines_all       = []    # Unformatted HTML from the post file.
     lines_wanted    = []    # Formatted lines will go here (after replacing escape codes)
     lines_finished  = []    # RSS post lines will go here (and lines from lines_wanted)
+    done_new_file   = False 
+    done_add_rss    = False
+    done_copy_rss   = False
+
 
     if len(sys.argv) != 2:
         if len(sys.argv) < 2:
@@ -118,9 +119,17 @@ def main():
         else:
             print(f"{str_prefix_err} {error_too_many_args}")
     else: # If this program received the proper number of arguments
+
+        dev_mode = yes_or_no("Are you running in testing mode? ")
+        if dev_mode:    
+            # Test variables are here, replacing the real ones so this doesn't make irreversable changes
+            rss_path        = os.path.expanduser(f"~/Downloads/{url_domain.split('.')[0]}/rss.xml") 
+            all_file_path   = os.path.expanduser(f"~/Downloads/{url_domain.split('.')[0]}/articles/all/index.html")
+            all_file_csv    = os.path.expanduser(f"~/Downloads/{url_domain.split('.')[0]}/articles/articles.csv")
+
         if "-h" in sys.argv[-1] or "--help" in sys.argv[-1]:
             print("".join(message_help))
-        elif sys.argv[-1].lower().endswith(".html"):
+        elif sys.argv[-1].lower().endswith(".html"):    # All arguments pass
             html_path = sys.argv[-1]
             lines_all = open(os.path.expanduser(html_path)).readlines()  # Read the HTML file
             # expanduser(): If user types "~" instead of home dir path
@@ -136,7 +145,6 @@ def main():
                             str_post_title = line3      # Set selection as the post title
                             cont = False                # Do not keep asking about titles
                             int_line_start = position   # Line number of the title of the post
-                            # print(f"Title set as: {str_post_title}")
             if cont:
                 print(f"{str_prefix_err} {error_no_title}")     # User did not select a title
                 sys.exit()                  # User must restart program and select one then
@@ -147,18 +155,17 @@ def main():
             
             for position, line in enumerate(lines_all):
                 if "</body>" in line.replace(" ", "").strip(): # Check if it reached the end of the body tag, aka the end of the RSS content
-                    int_reached_end_of_body_tag = 1 
-                if int_line_start <= position and int_reached_end_of_body_tag == 0: # If it's after or on the start line number, and if it hasn't reached the end
+                    reached_end_of_body = True
+                if int_line_start <= position and not reached_end_of_body: # If it's after or on the start line number, and if it hasn't reached the end
                     # Need to replace "&" with "&amp;" first or else it will also replace the other escape codes too.
                     lines_wanted.append(line.replace("&", "&amp;").replace("'", "&apos;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
             
             cont = True
-            if auto_url:
-                file_name = html_path.split("/")[-1]
-                article_url_tmp = f"{auto_url_template}{file_name}"
-                cont = not yes_or_no(f"Is this correct: '{article_url_tmp}'? ")
-                if not cont:
-                    article_url = article_url_tmp
+            file_name = html_path.split("/")[-1]
+            article_url_tmp = f"{url_prefix}{file_name}"
+            cont = not yes_or_no(f"Is this correct: '{article_url_tmp}'? ")
+            if not cont:
+                article_url = article_url_tmp
             while cont: # Keep asking for URL until user confirms it is correct.
                 article_url = input(f"{str_prefix_ques} Article URL: ")
                 if not article_url.startswith("https://") or not article_url.startswith("http://"):
@@ -176,9 +183,9 @@ def main():
             lines_finished.append(f"\t\t<updated>{date_publish}</updated>")
             lines_finished.append(f"\t\t<link href=\"{article_url}\"/>")
             lines_finished.append(f"\t\t<author>")
-            lines_finished.append(f"\t\t\t<name>{author}</name>")
+            lines_finished.append(f"\t\t\t<name>{rss_author}</name>")
             lines_finished.append(f"\t\t</author>")
-            lines_finished.append(f"\t\t<category term=\"{term}\" label=\"{label}\"/>")
+            lines_finished.append(f"\t\t<category term=\"{rss_term}\" label=\"{rss_label}\"/>")
             lines_finished.append(f"\t\t<content type=\"html\">")
             for i in lines_wanted:
                 lines_finished.append(f"\t\t{i[:-1]}")
@@ -188,124 +195,140 @@ def main():
 
             while True:
                 out_rss         = yes_or_no("Add to RSS file? ")
+                if out_rss:
+                    if not yes_or_no(f"Is this the correct RSS file: '{rss_path}'? "):
+                        rss_path = ""
+                        while not os.path.exists(os.path.expanduser(rss_path)):
+                            rss_path = input(f"{str_prefix_ques} What is the file path? ")
+                            if not os.path.exists(os.path.expanduser(rss_path)):
+                                print(f"{str_prefix_err} Not a path!")
                 out_clipboard   = yes_or_no("Copy output to clipboard? ")
                 out_file        = yes_or_no("Copy output to new file? ")
                 out_stdout      = yes_or_no("Print output here? ")
-                if out_rss:
-                    if not yes_or_no(f"Is this the correct RSS file: '{auto_rss_path}'? "):
-                        auto_rss_path = ""
-                        while not os.path.exists(os.path.expanduser(auto_rss_path)):
-                            auto_rss_path = input(f"{str_prefix_ques} What is the file path? ")
-                            if not os.path.exists(os.path.expanduser(auto_rss_path)):
-                                print(f"{str_prefix_err} Not a path!")
+                
                 if not (out_clipboard or out_file or out_stdout or out_rss):
                     print(f"{str_prefix_err} {error_no_out_choice}")
                 else:
                     if out_clipboard:                                               # Copy to clipboard
                         pyperclip.copy("".join(lines_finished))                         # Copy all the lines as one string
-                        print(f"{str_prefix_done} {message_copied}")                    # Inform user that it's done
+                        done_copy_rss = True
+                        
                     if out_file:                                                    # Copy to new file
-                        str_file_name = input(f"{str_prefix_ques} File name for output: ")
-                        open(str_file_name, "a").writelines(lines_finished)             # Write to new file (append)
-                        print(f"{str_prefix_done} Wrote to '{str_file_name}'")          # Inform user that it's done
+                        str_file_name = os.path.expanduser(input(f"{str_prefix_ques} File name for output: "))
+                        if (os.path.exists(str_file_name) and yes_or_no("File exists. Append to file? ")) or os.access(os.path.dirname(str_file_name), os.W_OK):
+                            # the file does not exists but write privileges are given or file exists.
+                            done_new_file = True
+                        else: # can not write there
+                            print(f"{str_prefix_err} File cannot be created.")
+                        if done_new_file:
+                            open(str_file_name, "a").writelines(lines_finished)             # Write to new file (append)
+                            
                     if out_stdout:                                                  # Print the new lines
                         print("".join(lines_finished))
                         # Requires no notification to user that it's done (it will literally be right there).
                     if out_rss:                                                     # Add to RSS feed
                         # This is after out_stdout so that the user sees that this will be done too 
                         # (and won't have to search for the DONE message)
-                        rss_lines = open(auto_rss_path, 'r').readlines()                # Read the current RSS
+                        rss_lines = open(rss_path, 'r').readlines()                # Read the current RSS
                         rss_lines_strip = [line.strip() for line in rss_lines]          # Get striped lines of RSS
-                        rss_insert_line_index = rss_lines_strip.index(auto_rss_insert)  # Find where the delimiter is
+                        rss_insert_line_index = rss_lines_strip.index(rss_insert_pos)  # Find where the delimiter is
                         # Join the arrays: {RSS lines before delimiter + delimiter} + {new lines} + {RSS lines after delimiter}
                         rss_lines_new = rss_lines[:rss_insert_line_index+1] + lines_finished + rss_lines[rss_insert_line_index+1:]
-                        open(auto_rss_path, 'w').writelines(rss_lines_new)              # Overwrite RSS file with new lines (included all old lines)
-                        print(f"{str_prefix_done} Wrote to '{auto_rss_path}'")          # Inform user that it's done
+                        open(rss_path, 'w').writelines(rss_lines_new)              # Overwrite RSS file with new lines (included all old lines)
+                        done_add_rss = True
                     break
-            auto_add_all_posts = yes_or_no("Append post to 'all/'? ")
-            if auto_add_all_posts:
-                # Get created date of current post
-                str_post_created = ""                       # Created date of the post to add will go here.
-                for line in reversed(lines_all):
-                    if "Created" in line and len(str_post_created) == 0:
-                        str_post_created = line.replace("Created:", "").strip()[-10:] # ex. "2021 04 29"
-                
-                # Open CSV file and read contents. Format: Date, Title, URL
-                lines_csv = list(csv.reader(open(auto_add_all_posts_csv)))
-                article_url_relative = article_url.split(site_domain)[-1]
-                lines_csv.append([str_post_created, str_post_title, article_url_relative])   # Add new post
-                print(f"Added [{str_post_created}, {str_post_title}, {article_url_relative}]")
-                lines_csv[1:] = sorted(lines_csv[1:], key=operator.itemgetter(0))   # Sort by first column
+            
+            # Add to /articles/all/index.html
+            # Get created date of current post
+            str_post_created = ""                       # Created date of the post to add will go here.
+            for line in reversed(lines_all):
+                if "Created" in line and len(str_post_created) == 0:
+                    str_post_created = line.replace("Created:", "").strip()[-10:] # ex. "2021 04 29"
+            
+            # Open CSV file and read contents. Format: Date, Title, URL
+            lines_csv = list(csv.reader(open(all_file_csv)))
+            article_url_relative = article_url.split(url_domain)[-1]
+            lines_csv.append([str_post_created, str_post_title, article_url_relative])   # Add new post
+            lines_csv[1:] = sorted(lines_csv[1:], key=operator.itemgetter(0))   # Sort by first column (ignore first row, those are the column identifiers)
 
-                # Save CSV file
-                with open(auto_add_all_posts_csv, 'w', newline='') as file:
-                    writer = csv.writer(file)
-                    writer.writerows(lines_csv)
-                
-                lines_html = []
-                lines_html.append(f'<!DOCTYPE html>\n')
-                lines_html.append(f'<html lang="en-us">\n')
-                lines_html.append(f'\n')
-                lines_html.append(f'<head>\n')
-                lines_html.append(f'\t<title>Articles</title>\n')
-                lines_html.append(f'\t<link rel="stylesheet" type="text/css" href="/style.css" media="screen"/>\n')
-                lines_html.append(f'\t<meta charset="utf-8">\n')
-                lines_html.append(f'\t<meta name="viewport" content="width=device-width, initial-scale=1">\n')
-                lines_html.append(f'</head>\n')
-                lines_html.append(f'<body>\n')
-                lines_html.append(f'\t<h1><a class="stealth-url" href="/">Hussein Esmail</a></h1>\n')
-                lines_html.append(f'\t<div class="nav">\n')
-                lines_html.append(f'\t\t<header>\n')
-                lines_html.append(f'\t\t\t<ul class="nav-ul">\n')
-                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/about"    title="About">About</a></li>\n')
-                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/articles" title="Articles">Articles</a></li>\n')
-                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/books"    title="Books">Books</a></li>\n')
-                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/guides"   title="Theatre Guides">Theatre Guides</a></li>\n')
-                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/rss.xml"  title="RSS">RSS</a></li>\n')
-                lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/contact"  title="Contact">Contact</a></li>\n')
-                lines_html.append(f'\t\t\t</ul>\n')
-                lines_html.append(f'\t\t</header>\n')
-                lines_html.append(f'\t</div>\n')
-                lines_html.append(f'\t<h1>All Article Posts</h1>\n')
-                
-                last_year    = "0"
-                last_month   = "0"
-                # Split rows in CSV by month
-                for line in reversed(lines_csv[1:]): # lines_csv[1:] because index 0 are the column names
-                    current_year = line[0].split(" ")[0]
-                    current_month = line[0].split(" ")[1]
-                    if current_month != last_month or current_year != last_year:    # New month/year
-                        if not (last_month == "0" and last_year == "0"):            # If not first post, close the old list.
-                            lines_html.append("\t</ul>\n")
-                        current_month_name = datetime.datetime.strptime(current_month, "%m").strftime("%B") # Month as text
-                        lines_html.append(f"\t<{auto_add_all_posts_header_tag}>{current_month_name} {current_year}</{auto_add_all_posts_header_tag}>\n")
-                        lines_html.append("\t<ul>\n")
-                    lines_html.append("\t\t<li>\n")
-                    lines_html.append(f'\t\t\t{line[0]}: <a href="{line[2]}">{line[1]}</a>\n')
-                    lines_html.append("\t\t</li>\n")
-                    last_month = current_month
-                    last_year = current_year
-                lines_html.append("\t</ul>\n")  # At the end, close the last open list
-                lines_html.append('</body>\n')
-                lines_html.append('<footer>\n')
-                lines_html.append('\t<br>\n')
-                lines_html.append('\t<p>\n')
-                lines_html.append(f'\t\tCreated: &nbsp; {site_created_date}\n')
-                lines_html.append('\t</p>\n')
-                lines_html.append('\t<br>\n')
-                lines_html.append('\t<p>\n')
-                lines_html.append(f'\t\tEdited: &nbsp; &nbsp;  {datetime.datetime.now().strftime("%Y %m %d")}\n')
-                lines_html.append('\t</p>\n')
-                lines_html.append('</footer>\n')
-                lines_html.append('</html>\n')
+            # Save CSV file
+            with open(all_file_csv, 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(lines_csv)
+            
+            # Header info for /articles/all/index.html
+            lines_html = []
+            lines_html.append(f'<!DOCTYPE html>\n')
+            lines_html.append(f'<html lang="en-us">\n')
+            lines_html.append(f'\n')
+            lines_html.append(f'<head>\n')
+            lines_html.append(f'\t<title>Articles</title>\n')
+            lines_html.append(f'\t<link rel="stylesheet" type="text/css" href="/style.css" media="screen"/>\n')
+            lines_html.append(f'\t<meta charset="utf-8">\n')
+            lines_html.append(f'\t<meta name="viewport" content="width=device-width, initial-scale=1">\n')
+            lines_html.append(f'</head>\n')
+            lines_html.append(f'<body>\n')
+            lines_html.append(f'\t<h1><a class="stealth-url" href="/">Hussein Esmail</a></h1>\n')
+            lines_html.append(f'\t<div class="nav">\n')
+            lines_html.append(f'\t\t<header>\n')
+            lines_html.append(f'\t\t\t<ul class="nav-ul">\n')
+            lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/about"    title="About">About</a></li>\n')
+            lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/articles" title="Articles">Articles</a></li>\n')
+            lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/books"    title="Books">Books</a></li>\n')
+            lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/guides"   title="Theatre Guides">Theatre Guides</a></li>\n')
+            lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/rss.xml"  title="RSS">RSS</a></li>\n')
+            lines_html.append(f'\t\t\t\t<li><a class="stealth-url" href="/contact"  title="Contact">Contact</a></li>\n')
+            lines_html.append(f'\t\t\t</ul>\n')
+            lines_html.append(f'\t\t</header>\n')
+            lines_html.append(f'\t</div>\n')
+            lines_html.append(f'\t<h1>All Article Posts</h1>\n')
+            
+            last_date    = "0000 00"
+            # Split rows in CSV by month
+            for line in reversed(lines_csv[1:]): # lines_csv[1:] because index 0 are the column names
+                current_year = line[0].split(" ")[0]
+                current_month = line[0].split(" ")[1]
+                if current_year + ' ' + current_month != last_date:    # New month/year
+                    if not last_date == "0000 00":            # If not first post, close the old list.
+                        lines_html.append("\t</ul>\n")
+                    current_month_name = datetime.datetime.strptime(current_month, "%m").strftime("%B") # Month as text
+                    lines_html.append(f"\t<{all_month_header}>{current_month_name} {current_year}</{all_month_header}>\n")
+                    lines_html.append("\t<ul>\n")
+                lines_html.append("\t\t<li>\n")
+                lines_html.append(f'\t\t\t{line[0]}: <a href="{line[2]}">{line[1]}</a>\n')
+                lines_html.append("\t\t</li>\n")
+                last_date = current_year + ' ' + current_month
+            
+            # Footer info for /articles/all/index.html
+            lines_html.append("\t</ul>\n")  # At the end, close the last open list
+            lines_html.append('</body>\n')
+            lines_html.append('<footer>\n')
+            lines_html.append('\t<br>\n')
+            lines_html.append('\t<p>\n')
+            lines_html.append(f'\t\tCreated: &nbsp; {all_created_date}\n')
+            lines_html.append('\t</p>\n')
+            lines_html.append('\t<br>\n')
+            lines_html.append('\t<p>\n')
+            lines_html.append(f'\t\tEdited: &nbsp; &nbsp;  {datetime.datetime.now().strftime("%Y %m %d")}\n')
+            lines_html.append('\t</p>\n')
+            lines_html.append('</footer>\n')
+            lines_html.append('</html>\n')
 
-                open(auto_add_all_posts_path, 'w').writelines(lines_html)
-                print(f"{str_prefix_done} Added to all/")
+            open(all_file_path, 'w').writelines(lines_html)     # Write new re-compiled version of all/
+            
+            # Done messages here
+            if done_add_rss:
+                print(f"{str_prefix_done} {message_rss_done}")
+            if done_copy_rss:
+                print(f"{str_prefix_done} {message_copied}")
+            if done_new_file:
+                print(f"{str_prefix_done} {message_new_file_done}")
+            print(f"{str_prefix_done} Added to all/")
+
 
         else: # If a file was given but it does not have a .HTML extension
             print(f"{str_prefix_err} {error_incorrect_args}")
     sys.exit()
-
 
 if __name__ == "__main__":
     main()
