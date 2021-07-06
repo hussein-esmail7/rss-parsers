@@ -15,7 +15,7 @@ import validators
 import csv
 import operator
 
-# TODO: Redo the all/ section and recompile the whole page automatically using CSV to keep track of the posts.
+# TODO: Check if .csv file exists before accessing
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -95,11 +95,11 @@ def main():
     rss_term            = "Articles"            # Used for RSS feed posts
     tag_type_title      = "h1"                  # Used for RSS feed posts - Will automatically be the title tag of the RSS post
     char_placehold      = "|"                   # This character is used in determining what's inside the title tag
-    rss_path            = f"/hdd1/Backups/Website/{url_domain.split('.')[0]}/rss.xml"
+    rss_path            = f"/hdd1/Website/{url_domain.split('.')[0]}/rss.xml"
     rss_insert_pos      = "<!-- FEEDS START -->"    # Used for RSS feed posts - Where to insert after
     all_created_date    = "2021 05 06"          # Used for recompiling '/articles/all/index.html'
-    all_file_path       = f"/hdd1/Backups/Website/{url_domain.split('.')[0]}/articles/all/index.html"
-    all_file_csv        = f"/hdd1/Backups/Website/{url_domain.split('.')[0]}/articles/articles.csv"
+    all_file_path       = f"/hdd1/Website/{url_domain.split('.')[0]}/articles/all/index.html"
+    all_file_csv        = f"/hdd1/Website/{url_domain.split('.')[0]}/articles/articles.csv"
     all_month_header    = "h2"        # Used for all/
 
     # ========= VARIABLES USED BY PROGRAM =========
