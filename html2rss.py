@@ -266,6 +266,7 @@ def main():
             lines_html.append(f'\t<link rel="stylesheet" type="text/css" href="/style.css" media="screen"/>\n')
             lines_html.append(f'\t<meta charset="utf-8">\n')
             lines_html.append(f'\t<meta name="viewport" content="width=device-width, initial-scale=1">\n')
+            lines_html.append(f'\t<meta name="format-detection" content="telephone=no">\n')
             lines_html.append(f'</head>\n')
             lines_html.append(f'<body>\n')
             lines_html.append(f'\t<h1><a class="stealth-url" href="/">Hussein Esmail</a></h1>\n')
