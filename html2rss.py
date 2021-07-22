@@ -1,7 +1,7 @@
 '''
 html2rss.py by  Hussein Esmail
 Created: 2021 05 05
-Updated: 2021 05 28
+Updated: 2021 07 22
 '''
 description = [ "This inputs an HTML file in the arguments and converts a copy of it to\n",
                 "an RSS format where in-item URLs are supported in Newsboat (like on \n",
@@ -16,6 +16,7 @@ import csv
 import operator
 
 # TODO: Check if .csv file exists before accessing
+# TODO: If a relative link is present (ex: /contact), change it to the full link in the RSS post
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
