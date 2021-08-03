@@ -1,19 +1,21 @@
 '''
-html2rss.py by  Hussein Esmail
+rss_html.py by  
+Hussein Esmail
 Created: 2021 05 05
-Updated: 2021 07 22
+Updated: 2021 08 03
 '''
 description = [ "This inputs an HTML file in the arguments and converts a copy of it to\n",
                 "an RSS format where in-item URLs are supported in Newsboat (like on \n",
                 "Reddit RSS pages, because if I prefer them then someone else probably\n",
                 "does too).\n"]
 
-import os, sys
-import datetime
-import pyperclip
-import validators
-import csv
-import operator
+import os           # Used to navigate directories
+import sys          # Used to get CLI arguments
+import datetime     # Used to make RSS time format
+import pyperclip    # Used to copy text to clipboard as an output method
+import validators   # Used to check validity of a URL
+import csv          # Used to read CSV file data
+import operator     # Used to manipulate CSV data
 
 # TODO: Check if .csv file exists before accessing
 # TODO: If a relative link is present (ex: /contact), change it to the full link in the RSS post
@@ -82,7 +84,7 @@ def yes_or_no(str_ask):
             return True
         elif y_n[0] == "n":
             return False
-        elif y_n[0] == "q":
+        if y_n[0] == "q":
             sys.exit()
         else:
             print(f"{str_prefix_err} {error_neither_y_n}")
@@ -101,17 +103,17 @@ def main():
     all_created_date    = "2021 05 06"          # Used for recompiling '/articles/all/index.html'
     all_file_path       = f"/hdd1/Website/{url_domain.split('.')[0]}/articles/all/index.html"
     all_file_csv        = f"/hdd1/Website/{url_domain.split('.')[0]}/articles/articles.csv"
-    all_month_header    = "h2"        # Used for all/
+    all_month_header    = "h2"                  # Used for all/
 
     # ========= VARIABLES USED BY PROGRAM =========
-    reached_end_of_body = False # Used when reading input HTML file
-    str_post_title  = ""    # Used later, must be in this scope
-    lines_all       = []    # Unformatted HTML from the post file.
-    lines_wanted    = []    # Formatted lines will go here (after replacing escape codes)
-    lines_finished  = []    # RSS post lines will go here (and lines from lines_wanted)
-    done_new_file   = False 
-    done_add_rss    = False
-    done_copy_rss   = False
+    str_post_title      = ""                    # Title of RSS post
+    lines_all           = []                    # Unformatted HTML from the post file.
+    lines_wanted        = []                    # Formatted lines will go here (after replacing escape codes)
+    lines_finished      = []                    # RSS post lines will go here (and lines from lines_wanted)
+    bool_end_body       = False                 # Used when reading input HTML file
+    bool_out_file       = False                 # Will be True later if user chooses to copy to new file
+    bool_out_rss        = False                 # Will be True later if user chooses to add to RSS file
+    bool_out_copy       = False                 # Will be True later if user chooses to copy to clipboard
 
 
     if len(sys.argv) != 2:
@@ -156,8 +158,8 @@ def main():
             
             for position, line in enumerate(lines_all):
                 if "</body>" in line.replace(" ", "").strip(): # Check if it reached the end of the body tag, aka the end of the RSS content
-                    reached_end_of_body = True
-                if int_line_start <= position and not reached_end_of_body: # If it's after or on the start line number, and if it hasn't reached the end
+                    bool_end_body = True
+                if int_line_start <= position and not bool_end_body: # If it's after or on the start line number, and if it hasn't reached the end
                     # Need to replace "&" with "&amp;" first or else it will also replace the other escape codes too.
                     lines_wanted.append(line.replace("&", "&amp;").replace("'", "&apos;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
             
@@ -212,16 +214,16 @@ def main():
                 else:
                     if out_clipboard:                                               # Copy to clipboard
                         pyperclip.copy("".join(lines_finished))                         # Copy all the lines as one string
-                        done_copy_rss = True
+                        bool_out_copy = True
                         
                     if out_file:                                                    # Copy to new file
                         str_file_name = os.path.expanduser(input(f"{str_prefix_ques} File name for output: "))
                         if (os.path.exists(str_file_name) and yes_or_no("File exists. Append to file? ")) or os.access(os.path.dirname(str_file_name), os.W_OK):
                             # the file does not exists but write privileges are given or file exists.
-                            done_new_file = True
+                            bool_out_file = True
                         else: # can not write there
                             print(f"{str_prefix_err} File cannot be created.")
-                        if done_new_file:
+                        if bool_out_file:
                             open(str_file_name, "a").writelines(lines_finished)             # Write to new file (append)
                             
                     if out_stdout:                                                  # Print the new lines
@@ -236,7 +238,7 @@ def main():
                         # Join the arrays: {RSS lines before delimiter + delimiter} + {new lines} + {RSS lines after delimiter}
                         rss_lines_new = rss_lines[:rss_insert_line_index+1] + lines_finished + rss_lines[rss_insert_line_index+1:]
                         open(rss_path, 'w').writelines(rss_lines_new)              # Overwrite RSS file with new lines (included all old lines)
-                        done_add_rss = True
+                        bool_out_rss = True
                     break
             
             # Add to /articles/all/index.html
@@ -319,14 +321,13 @@ def main():
             open(all_file_path, 'w').writelines(lines_html)     # Write new re-compiled version of all/
             
             # Done messages here
-            if done_add_rss:
+            if bool_out_rss:
                 print(f"{str_prefix_done} {message_rss_done}")
-            if done_copy_rss:
+            if bool_out_copy:
                 print(f"{str_prefix_done} {message_copied}")
-            if done_new_file:
+            if bool_out_file:
                 print(f"{str_prefix_done} {message_new_file_done}")
             print(f"{str_prefix_done} Added to all/")
-
 
         else: # If a file was given but it does not have a .HTML extension
             print(f"{str_prefix_err} {error_incorrect_args}")

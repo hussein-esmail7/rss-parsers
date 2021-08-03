@@ -1,2 +1,8 @@
 pyperclip
 validators
+lxml
+requests
+urllib
+csv
+operator
+feedparser
