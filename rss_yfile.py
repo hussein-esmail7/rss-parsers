@@ -12,7 +12,7 @@ from lxml import html as ht     # Used to parse HTML
 from lxml import etree
 import feedparser               # Used to get RSS feed to get post links
 import requests                 # Used to get HTML
-import urllib       # Used to copy template RSS file from my Github
+import urllib                   # Used to copy template RSS file from my Github
 
 # == User-configurable variables
 RSS_FOLDER = os.path.expanduser("~/Documents/Local-RSS/")
@@ -20,6 +20,7 @@ RSS_FILENAME = "yfile.xml"
 RSS_TITLE = "YFile"
 RSS_TERM = "YFile"  # TODO: YFile uses many terms in each post as categories. Add functionality for this later
 RSS_DESCRIPTION = "York University' Journal of Record"
+BOOL_QUIET = True               # Quiet mode
 
 # == Other global variables
 RSS_LINES_REMOVE = ['<!-- <icon></icon> -->', '<!-- <id></id> -->', '<!-- <logo></logo> -->', '<link rel="self" href="[LINK TO THIS RSS]" type="application/atom+xml" />', '<link rel="alternate" href="[LINK ALTERNATE]" type="text/html" />']
@@ -63,9 +64,10 @@ def main():
                 lines_new.append(content_desc)                          # Only changed item here
                 lines_new.append(f"\t\t</content>")
                 lines_new.append(f"\t</entry>")
-                print(f"DONE: {entry.id}")
-        else:
-            print(f"IN FILE: {entry.id}")
+                if not BOOL_QUIET:
+                    print(f"[\033[92mDONE\033[0m] {entry.id}")
+        elif not BOOL_QUIET:
+            print(f"[\033[92mIN FILE\033[0m] {entry.id}")
     if len(lines_new) > 0:                                              # Make RSS feed
         if not os.path.exists(RSS_FOLDER):                              # Make dir if it does not exist
             os.makedirs(RSS_FOLDER)
