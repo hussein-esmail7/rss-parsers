@@ -6,6 +6,8 @@ Updated: 2021 08 03
 Description: This program converts YFile articles to RSS.
 '''
 
+# TODO 2021 09 22: Redo this because of YFile's new layout.
+
 import os                       # Used to navigate directories
 import sys                      # Used to exit program
 from lxml import html as ht     # Used to parse HTML
