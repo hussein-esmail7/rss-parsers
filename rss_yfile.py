@@ -2,11 +2,9 @@
 rss_yfile.py
 Hussein Esmail
 Created: 2021 08 03
-Updated: 2021 08 03
+Updated: 2021 09 22
 Description: This program converts YFile articles to RSS.
 '''
-
-# TODO 2021 09 22: Redo this because of YFile's new layout.
 
 import os                       # Used to navigate directories
 import sys                      # Used to exit program
@@ -31,9 +29,9 @@ URL_RSS = "https://yfile.news.yorku.ca/feed/atom/"                      # YFile 
 URL_TEMPLATE_RSS = "https://raw.githubusercontent.com/hussein-esmail7/templates/master/templaterss.xml" # Template RSS on my Github that this program relies on
 
 def main():
-    NewsFeed = feedparser.parse(URL_RSS)                                # Get RSS feed from the internet
+    newsFeed = feedparser.parse(URL_RSS)                                # Get RSS feed from the internet
     lines_new = []
-    for entry in NewsFeed.entries:                                      # For every post
+    for entry in newsFeed.entries:                                      # For every post
         content_id = entry.id.split("=")[-1]                            # Link ID
         content_desc = ""                                               # RSS Description per post
         continue_getting_post = True
