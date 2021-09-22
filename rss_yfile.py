@@ -42,7 +42,7 @@ def main():
             continue_getting_post = entry.id not in lines_joined        # If post is already in file or not
         if continue_getting_post:                                       # If post is not already in file
             site_html = ht.fromstring(requests.get(entry.id).content)   # Get HTML
-            content_element = site_html.xpath(f'//*[@id="post-{content_id}"]/div[3]')
+            content_element = site_html.xpath(f'//*[@id="post-{content_id}"]/*[@class="entry-content"]')
             if len(content_element) > 0:                                # If given valid data
                 content_desc = etree.tostring(content_element[0]).decode('utf-8')
                 content_desc = content_desc.replace("\n", "")
