@@ -6,9 +6,6 @@ Updated: 2021 09 22
 Description: [DESCRIPTION]
 '''
 
-# This part is used for https://github.com/hussein-esmail7/template-maker
-# templateDescription: Python Selenium Web Scraper
-
 import os
 import sys # To exit the program
 from selenium import webdriver
@@ -16,10 +13,16 @@ from selenium.common.exceptions import *
 # from selenium.webdriver.support.ui import Select  # Used to select from drop down menus
 from selenium.webdriver.chrome.options import Options  # Used to add aditional settings (ex. run in background)
 # from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
+import platform
+import time
 
 bool_use_Brave = False
-bool_run_in_background = False
-chromedriver_path = os.path.expanduser("~/Documents/Coding/py/reference/Chromedriver/chromedriver")
+bool_run_in_background = True
+os_type = platform.platform().split("-")[0]
+if os_type == "Linux":
+    chromedriver_path = os.path.expanduser("~/Documents/Coding/py/reference/Chromedriver/chromedriver")
+elif os_type == "macOS":
+    chromedriver_path = "/Users/hussein/Documents/Coding/py/reference/Chromedriver/chromedriver"
 target_site = "https://www.tiktok.com/@nothanksalex"
 
 def main():
@@ -32,14 +35,10 @@ def main():
     else:
         driver = webdriver.Chrome(chromedriver_path, options=options)
     driver.get(target_site)
-    vid_elements = driver.find_elements_by_class_name("video-feed-item")
-    vid_links = driver.find_elements_by_class_name("video-feed-item-wrapper")
-    for i in vid_links:
-        print(i.get_attribute('href')) # Video links
-    print(len(vid_elements))
-    dummy = input(">")
-
-    # ADDITIONAL CODE HERE
+    vid_links = [] 
+    temp = driver.find_elements_by_class_name("video-feed-item-wrapper")
+    for i in temp:
+        vid_links.append(i.get_attribute('href')) # Video links
 
     # Cleanup
     driver.close()  # Close the browser
