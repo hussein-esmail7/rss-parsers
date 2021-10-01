@@ -1,8 +1,9 @@
-pyperclip
-validators
-lxml
-requests
-urllib
 csv
-operator
 feedparser
+lxml
+operator
+pyperclip
+requests
+selenium
+urllib
+validators
