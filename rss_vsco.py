@@ -22,9 +22,6 @@ if os_type == "Linux":
     chromedriver_path = os.path.expanduser("~/Documents/Coding/py/reference/Chromedriver/chromedriver")
 elif os_type == "macOS":
     chromedriver_path = f"/Users/{getpass.getuser()}/Documents/Coding/py/reference/Chromedriver/chromedriver"
-else:
-    print("I don't know how to use this operating system... There may be incompatibilities")
-    sys.exit()
 
 RSS_FOLDER = os.path.expanduser("~/Documents/Local-RSS/VSCO/")
 RSS_TERM = "VSCO"
