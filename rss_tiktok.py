@@ -3,7 +3,7 @@ rss_tiktok.py
 Hussein Esmail
 Created: 2021 09 22
 Updated: 2021 09 22
-Description: [DESCRIPTION]
+Description: This program gets the most recent TikTok video URLs from a user then adds it to an RSS file at the chosen desktop location.
 '''
 
 import os
@@ -12,9 +12,7 @@ from selenium import webdriver
 from selenium.common.exceptions import *
 # from selenium.webdriver.support.ui import Select  # Used to select from drop down menus
 from selenium.webdriver.chrome.options import Options  # Used to add aditional settings (ex. run in background)
-# from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
 import platform
-import time
 import datetime
 import requests                 # Used to get HTML
 import urllib                   # Used to copy template RSS file from my Github
