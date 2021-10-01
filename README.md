@@ -34,6 +34,12 @@ python3 rss_html.py {HTML File location}
 ```
 This program takes 1 argument, and that is the file location of the HTML file. When outputting, the program will ask if you want to copy to clipboard, save to file, or print to standard output. You can also have multiple output types or all of them.
 
+### rss_vsco.py
+```
+python3 rss_vsco.py
+```
+This program takes no arguments, but there are variables that you can configure at the beginning of the file (ex. RSS file location). This program will only output to a local RSS feed at the set location (in variable `RSS_FOLDER`). This currently does not work on Windows, because I have no Windows machine to test it on. Pull requests with a tested version are welcome.
+
 ### rss_yfile.py
 ```
 python3 rss_yfile.py
