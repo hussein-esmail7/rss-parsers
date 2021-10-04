@@ -93,7 +93,10 @@ def main():
             time_unformatted = time_unformatted.replace("pm", "PM").replace("am", "AM")
             if len(time_unformatted.split("/")[1].split(":")[0]) == 1:
                 time_unformatted = time_unformatted.replace("/", "/0")
-            entry["time_formatted"] = datetime.datetime.strptime(time_unformatted, "%B %d, %Y /%H:%M%p").astimezone().replace(microsecond=0).isoformat()
+            entry["time_formatted"] = datetime.datetime.strptime(time_unformatted, "%B %d, %Y /%H:%M%p")
+            if "PM" in time_unformatted:
+                entry["time_formatted"] = entry["time_formatted"] + datetime.timedelta(hours=12)
+            entry["time_formatted"] = entry["time_formatted"].astimezone().replace(microsecond=0).isoformat()
             description_possible = driver.find_elements_by_xpath('//p')
             for item in description_possible:
                 if "css-1whdjid-Caption" in item.get_attribute("class") and len(item.text) != 0:
