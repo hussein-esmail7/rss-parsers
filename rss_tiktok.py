@@ -27,14 +27,12 @@ TIKTOK_URLS = os.path.expanduser("~/Documents/Local-RSS/Tiktok/urls")
 # == Other global variables
 RSS_LINES_REMOVE = ['<!-- <icon></icon> -->', '<!-- <id></id> -->', '<!-- <logo></logo> -->', '<link rel="self" href="[LINK TO THIS RSS]" type="application/atom+xml" />', '<link rel="alternate" href="[LINK ALTERNATE]" type="text/html" />']
 RSS_POS_INSERT = "<!-- FEEDS START -->"                                 # Used for RSS feed posts - Where to insert after
-URL_RSS = "https://yfile.news.yorku.ca/feed/atom/"                      # YFile RSS URL
 URL_TEMPLATE_RSS = "https://raw.githubusercontent.com/hussein-esmail7/templates/master/templaterss.xml" # Template RSS on my Github that this program relies on
 
 
 bool_use_Brave = False
 bool_run_in_background = False
 os_type = platform.platform().split("-")[0]
-path_urls = os.path.expanduser("~/Documents/Local-RSS/TikTok/urls")
 if os_type == "Linux":
     chromedriver_path = os.path.expanduser("~/Documents/Coding/py/reference/Chromedriver/chromedriver")
 elif os_type == "macOS":
@@ -48,6 +46,9 @@ def is_in_list(item, list):
     return False
 
 def main():
+    if not os.path.exists(TIKTOK_URLS):
+        print(f"Error: {TIKTOK_URLS} does not exist. Please create the file in this folder and run the program again.")
+        sys.exit(1)
     usernames = open(TIKTOK_URLS, 'r').readlines()
     usernames = [username.replace('\n', '') for username in usernames]
     feed_counter = 0

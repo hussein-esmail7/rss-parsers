@@ -28,7 +28,6 @@ RSS_TERM = "VSCO"
 VSCO_URLS = RSS_FOLDER + "urls"
 RSS_LINES_REMOVE = ['<!-- <icon></icon> -->', '<!-- <id></id> -->', '<!-- <logo></logo> -->', '<link rel="self" href="[LINK TO THIS RSS]" type="application/atom+xml" />', '<link rel="alternate" href="[LINK ALTERNATE]" type="text/html" />']
 RSS_POS_INSERT = "<!-- FEEDS START -->"                                 # Used for RSS feed posts - Where to insert after
-URL_RSS = "https://yfile.news.yorku.ca/feed/atom/"                      # YFile RSS URL
 URL_TEMPLATE_RSS = "https://raw.githubusercontent.com/hussein-esmail7/templates/master/templaterss.xml" # Template RSS on my Github that this program relies on
 
 def is_in_list(item, list):
@@ -38,9 +37,11 @@ def is_in_list(item, list):
     return False
 
 def main():
+    if not os.path.exists(VSCO_URLS):
+        print(f"Error: {VSCO_URLS} does not exist. Please create the file in this folder and run the program again.")
+        sys.exit(1)
     usernames = open(VSCO_URLS, 'r').readlines()
     usernames = [username.replace('\n', '') for username in usernames]
-    feed_counter = 0
     options = Options()  
     if bool_run_in_background:
         options.add_argument("--headless")  # Adds the argument that hides the window
@@ -52,8 +53,6 @@ def main():
     for username in usernames:
         site_base = f"https://vsco.co/{username}/"
         target_site = f"{site_base}gallery"
-        new_posts = 0
-        feed_counter += 1
         urls_images = []
         dict_urls = []
         lines_new = []
@@ -103,7 +102,6 @@ def main():
                     entry['desc'] = item.text
             if not is_in_list(entry["url_html"], lines):
                 url_html = entry["url_html"]
-                new_posts += 1
                 content_desc = f"<p>{entry['desc']}</p>"
                 content_desc += f"\t\t<p><a href='{target_site}'>Profile</a></p>"
                 for img_url in entry["url_imgs"]:
