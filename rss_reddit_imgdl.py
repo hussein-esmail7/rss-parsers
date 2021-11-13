@@ -12,9 +12,11 @@ Description: This program looks at Reddit RSS feed files, and downloads an
 
 import os
 import sys
+import re # Used to extract subreddit name from URL
+import urllib.request # Used for getting the initial RSS file
+import xml.etree.ElementTree # Used to parse, edit, and export XML
 
 def main():
-    # CODE HERE
     """
     1. Get Reddit feed from URL
     2. Look for base URLs (ex: "https://i.redd.it/")
@@ -27,7 +29,58 @@ def main():
     media.
     """
 
+    # VARIABLES
+    msg_error_not_reddit = "[ERROR] Not a subreddit RSS URL"
     # Get Reddit feed from URL
+    # TODO: This part will use sys.argv later
+    URL_get = "https://reddit.com/r/unixporn/search.rss?q=flair:'Screenshot'&sort=new&restrict_sr=on&feature=legacy_search"
+    # Checks if it is a Reddit RSS first
+    if len(re.findall(r"(?<=/r/)(.*)(?=/)*.rss", URL_get)) > 0:
+        title_subreddit = re.findall(r"(?<=/r/)(.*)(?=/)", URL_get)[0]
+    else:
+        print(msg_error_not_reddit)
+        sys.exit(1)
+    # print(title_subreddit) # "unixporn"
+    # Download the file contents
+    file = urllib.request.urlopen(URL_get)
+    # Decode all file lines
+    file_decoded = [line.decode("utf-8") for line in urllib.request.urlopen(URL_get)]
+    # print(len(file_decoded))
+
+    
+    # Parse XML from temp file
+    et = xml.etree.ElementTree.parse(file_decoded)
+    # et = xml.etree.ElementTree.parse('file.xml')
+    # Append new tag: <a x='1' y='abc'>body text</a>
+    new_tag = xml.etree.ElementTree.SubElement(et.getroot(), 'a')
+    new_tag.text = 'body text'
+    new_tag.attrib['x'] = '1' # must be str; cannot be an int
+    new_tag.attrib['y'] = 'abc'
+    # Write back to file
+    #et.write('file.xml')
+    et.write('file_new.xml')
+
+
+
+    # Look for base URLs (ex: "https://i.redd.it/")
+    
+
+
+
+    # Download image
+
+
+
+
+    # Replace entire found URL in new file
+
+
+
+
+    # Save entire new file as .xml in a file path
+
+
+
 
 
 
