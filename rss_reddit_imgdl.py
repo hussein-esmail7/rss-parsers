@@ -15,6 +15,7 @@ import sys
 import re # Used to extract subreddit name from URL
 import urllib.request # Used for getting the initial RSS file
 import xml.etree.ElementTree # Used to parse, edit, and export XML
+import re
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -64,7 +65,13 @@ def main():
     """
 
     if yes_or_no("Use from file? "):
-        file_decoded = open("/Users/hussein/Downloads/unixporn.txt", "r").readlines()
+        bool_continue_asking = True
+        file_decoded = ""
+        # "/Users/hussein/Downloads/unixporn.txt"
+        while bool_continue_asking:
+            file_decoded = input("File path to use: ")
+            bool_continue_asking = not yes_or_no("Is this correct: " + file_decoded + "? ")
+        file_decoded = open(file_decoded, "r").readlines()
     else:
         # Get Reddit feed from URL
         # TODO: This part will use sys.argv later
@@ -85,7 +92,6 @@ def main():
 
     # Look for base URLs (ex: "https://i.redd.it/")
     print("".join(file_decoded).find("https://i.redd.it"))
-    import re
     file_str = "".join(file_decoded)
     print(re.search("(?P<url>https?://[^\s]+)", file_str).group("url"))
     print(re.search("(?P<url>https?://i.redd.it[^\s]+)", file_str).group("url"))
