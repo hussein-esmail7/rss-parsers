@@ -3,7 +3,8 @@ rss_vsco.py
 Hussein Esmail
 Created: 2021 09 30
 Updated: 2021 09 30
-Description: This program gets the most recent VSCO picture URLs from a user then adds it to an RSS file at the chosen desktop location.
+Description: This program gets the most recent VSCO picture URLs from a user
+    then adds it to an RSS file at the chosen desktop location.
 '''
 
 import os
@@ -13,15 +14,15 @@ from selenium.webdriver.chrome.options import Options  # Used to add aditional s
 import platform
 import datetime
 import urllib.request
-import getpass
+import getpass # Used to get username
 
-bool_use_Brave = False
 bool_run_in_background = True
 os_type = platform.platform().split("-")[0] # Used to get operating system type
 if os_type == "Linux":
     chromedriver_path = os.path.expanduser("~/Documents/Coding/py/reference/Chromedriver/chromedriver")
 elif os_type == "macOS":
     chromedriver_path = f"/Users/{getpass.getuser()}/Documents/Coding/py/reference/Chromedriver/chromedriver"
+print(chromedriver_path)
 
 RSS_FOLDER = os.path.expanduser("~/Documents/Local-RSS/VSCO/")
 RSS_TERM = "VSCO"
@@ -45,11 +46,7 @@ def main():
     options = Options()  
     if bool_run_in_background:
         options.add_argument("--headless")  # Adds the argument that hides the window
-    if bool_use_Brave:
-        options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-        driver = webdriver.Chrome(options=options)
-    else:
-        driver = webdriver.Chrome(chromedriver_path, options=options)
+    driver = webdriver.Chrome(chromedriver_path, options=options)
     for username in usernames:
         site_base = f"https://vsco.co/{username}/"
         target_site = f"{site_base}gallery"
@@ -85,27 +82,35 @@ def main():
                     "time_formatted": "",
                     "desc": ""
                 })
-        for entry in dict_urls:
-            driver.get(entry["url_html"])
-            entry["url_imgs"] = [item.get_attribute("src") for item in driver.find_elements_by_xpath("//img[@src]")]
+        for entry in dict_urls: # For each post URL
+            driver.get(entry["url_html"]) # Get HTML of each page
+            # Get URL for each image
+            entry["url_imgs"] = ["https:" + item.get_attribute("src")[:item.get_attribute("src").index("?")] for item in driver.find_elements_by_xpath("//img[@src]")]
+            # Get the time the post in question is posted
             time_unformatted = driver.find_element_by_xpath('//time/span[1]').text + " /" + driver.find_element_by_xpath('//time/span[2]').text
+            # Convert letter casing to match RSS format
             time_unformatted = time_unformatted.replace("pm", "PM").replace("am", "AM")
             if len(time_unformatted.split("/")[1].split(":")[0]) == 1:
                 time_unformatted = time_unformatted.replace("/", "/0")
+            # Convert string to datetime object
             entry["time_formatted"] = datetime.datetime.strptime(time_unformatted, "%B %d, %Y /%H:%M%p")
             if "PM" in time_unformatted:
                 entry["time_formatted"] = entry["time_formatted"] + datetime.timedelta(hours=12)
             entry["time_formatted"] = entry["time_formatted"].astimezone().replace(microsecond=0).isoformat()
+            # Get caption of the post
             description_possible = driver.find_elements_by_xpath('//p')
             for item in description_possible:
                 if "css-1whdjid-Caption" in item.get_attribute("class") and len(item.text) != 0:
                     entry['desc'] = item.text
-            if not is_in_list(entry["url_html"], lines):
-                url_html = entry["url_html"]
+            if not is_in_list(entry["url_html"], lines): # If this post is not already in RSS, add it
+                # These variables are used for the RSS post
+                url_html = entry["url_html"] # URL of the post
                 content_desc = f"<p>{entry['desc']}</p>"
                 content_desc += f"\t\t<p><a href='{target_site}'>Profile</a></p>"
+                # Add each image URL
                 for img_url in entry["url_imgs"]:
                     content_desc += f"\t\t<p><a href='{img_url}'>VSCO Image URL</a></p>"
+                # Converting HTML text to RSS HTML
                 content_desc = content_desc.replace("\n", "")
                 content_desc = content_desc.replace("\t", "")
                 content_desc = content_desc.replace("&#13;", "")        # :before and :after (not needed)
@@ -122,14 +127,14 @@ def main():
                 lines_new.append(f"\t\t<published>{entry['time_formatted']}</published>") # Ex. 2021-07-28T20:57:31Z
                 lines_new.append(f"\t\t<updated>{entry['time_formatted']}</updated>")
                 lines_new.append(f"\t\t<link href=\"{url_html}\"/>")    # Original RSS uses entry.links[0]['href']. .id is neater, and title doesn't need to be in link
-                lines_new.append(f"\t\t<author>")
-                lines_new.append(f"\t\t\t<name>@{username}</name>")
-                lines_new.append(f"\t\t</author>")
+                lines_new.append(f"\t\t<author>")                   # Adding author of post (1/3)
+                lines_new.append(f"\t\t\t<name>@{username}</name>") # Adding author of post (2/3)
+                lines_new.append(f"\t\t</author>")                  # Adding author of post (3/3)
                 lines_new.append(f"\t\t<category term=\"{RSS_TERM}\" label=\"{RSS_TITLE}\"/>")
                 lines_new.append(f"\t\t<content type=\"html\">")
-                lines_new.append(content_desc)
+                lines_new.append(content_desc) # Adding HTML description to RSS
                 lines_new.append(f"\t\t</content>")
-                lines_new.append(f"\t</entry>")
+                lines_new.append(f"\t</entry>") # End of RSS post
 
         lines_new = [line + "\n" for line in lines_new]                 # Done for formatting
         rss_delimiter_pos = [line.strip() for line in lines].index(RSS_POS_INSERT)
@@ -142,4 +147,4 @@ def main():
     sys.exit() # Exit the program
 
 if __name__ == "__main__":
-    main()
+    main() # Run the main method
