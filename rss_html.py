@@ -203,6 +203,8 @@ def main():
                         rss_path = ""
                         while not os.path.exists(os.path.expanduser(rss_path)):
                             rss_path = input(f"{str_prefix_ques} What is the file path? ")
+                            all_file_csv = f"{'/'.join(rss_path.split('/')[:-1])}/articles/articles.csv"
+                            all_file_path = f"{'/'.join(rss_path.split('/')[:-1])}/articles/articles.csv"
                             if not os.path.exists(os.path.expanduser(rss_path)):
                                 print(f"{str_prefix_err} Not a path!")
                 out_clipboard   = yes_or_no("Copy output to clipboard? ")
