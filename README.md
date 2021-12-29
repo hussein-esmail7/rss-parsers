@@ -17,6 +17,9 @@ In the terminal application [newsboat](https://github.com/newsboat/newsboat), RS
 
 ## List of Files
 - [rss_html.py](blob/main/rss_html.py): Convert a local HTML file to RSS. Intended for my own website, [husseinesmail.xyz](https://husseinesmail.xyz) but can be manipulated to work with other sites.
+- [rss_reddit_imgdl.py](blob/main/rss_reddit_imgdl.py): Takes an RSS feed from Reddit and downloads all images from the https://i.redd.it/ domain so they can be viewed from [newsboat](https://newsboat.org) offline. [r/unixporn](https://reddit.com/r/unixporn) is a good example of how this program can be used.
+- [rss_tiktok.py](blob/main/rss_tiktok.py): This uses Selenium to scrape the top posts of a person's TikTok profile and appends them to a RSS feed.
+- [rss_vsco.py](blob/main/rss_vsco.py): Similar to [rss_tiktok.py](blob/main/rss_tiktok.py), it scrapes the top posts of a profile and puts it in an RSS feed.
 - [rss_yfile.py](blob/main/rss_yfile.py): YFile newsletter at York University. They do have an RSS feed, but their RSS posts are only a fraction of what is displayed on each YFile article page. That annoyed me, so I thought to myself "Fine, I'll do it myself" (-Thanos).
 
 ## Installation
@@ -33,6 +36,12 @@ pip install requirements.txt
 python3 rss_html.py {HTML File location}
 ```
 This program takes 1 argument, and that is the file location of the HTML file. When outputting, the program will ask if you want to copy to clipboard, save to file, or print to standard output. You can also have multiple output types or all of them.
+
+### rss_reddit_imgdl.py
+```
+python3 rss_reddit_imgdl.py
+```
+This program takes no arguments, though it will take a urls file, and those URLs should be Reddit RSS feeds. If there is no urls file, it will ask you for a URL before running.
 
 ### rss_vsco.py
 ```
