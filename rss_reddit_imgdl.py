@@ -17,6 +17,10 @@ import urllib.request # Used for getting the initial RSS file
 import xml.etree.ElementTree # Used to parse, edit, and export XML
 import re
 
+# ========= VARIABLES ===========
+path_rss_save = "/home/hussein/Downloads/"
+path_img_save = "/home/hussein/Downloads/reddit/"
+
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
 color_darkgrey          = '\033[90m'
@@ -76,47 +80,39 @@ def main():
         # Get Reddit feed from URL
         # TODO: This part will use sys.argv later
         URL_get = "https://reddit.com/r/unixporn/search.rss?q=flair:'Screenshot'&sort=new&restrict_sr=on&feature=legacy_search"
-        # Checks if it is a Reddit RSS first
-        if len(re.findall(r"(?<=/r/)(.*)(?=/)*.rss", URL_get)) > 0:
-            title_subreddit = re.findall(r"(?<=/r/)(.*)(?=/)", URL_get)[0]
-        else:
-            print(msg_error_not_reddit)
+
+        # Checks if it is a URL
+        if not validators.url(URL_get):
+            print("This is not a URL!")
             sys.exit(1)
-        # print(title_subreddit) # "unixporn"
-        # Download the file contents
-        file = urllib.request.urlopen(URL_get)
-        # Decode all file lines
-        file_decoded = [line.decode("utf-8") for line in urllib.request.urlopen(URL_get)]
+
+        # Download the RSS file contents
+        file_decoded = urllib.request.urlopen(URL_get).read().decode("utf-8")
     if yes_or_no("Print file contents? "):
         print(file_decoded)
 
     # Look for base URLs (ex: "https://i.redd.it/")
-    print("".join(file_decoded).find("https://i.redd.it"))
-    file_str = "".join(file_decoded)
-    print(re.search("(?P<url>https?://[^\s]+)", file_str).group("url"))
-    print(re.search("(?P<url>https?://i.redd.it[^\s]+)", file_str).group("url"))
-
-
-
-    # Download image
-
-
-
-
-    # Replace entire found URL in new file
-
-
-
-
+    #print("".join(file_decoded).find("https://i.redd.it"))
+    link_positions = [m.start() for m in re.finditer("https://i.redd.it", file_decoded)]
+    print("There are " + str(len(link_positions)) + " image URLs")
+    print("Indexes of image URLs (start positons): ", end="")
+    print(link_positions)
+    
+    file_new = file_decoded # file_new is copy of RSS with edited URLs
+    for link in link_positions:
+        img_url = re.match("(.*?)&", file_decoded[link:]).group()[:-1] # Get URL
+        # Download image
+        img_name = img_url.split("/")[-1] # Get image name from URL
+        print("Saving " + img_name + "... ", end="")
+        urllib.request.urlretrieve(img_url, path_img_save + img_name) # Save image
+        # Replace entire found URL in new file
+        file_new = file_new.replace(img_url, "file://" + path_img_save + img_name)
+        print("Done")
     # Save entire new file as .xml in a file path
-
-
-
-
-
-
+    with open(path_rss_save + "rss1.xml", "w") as f:
+        f.write(file_new)
+    print("RSS File written")
     sys.exit()
-
 
 if __name__ == "__main__":
     main()
