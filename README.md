@@ -7,20 +7,42 @@ A collection of Python scripts that converts pages to RSS.
 - [List of Files](#list-of-files)
 - [Installation](#installation)
 - [Usage (per program)](#usage)
+	- [rss_html.py](#rss_html.py)
+	- [rss_reddit_imgdl.py](#rss_reddit_imgdl.py)
+	- [rss_tiktok.py](#rss_tiktok.py)
+	- [rss_vsco.py](#rss_vsco.py)
+	- [rss_yfile.py](#rss_yfile.py)
 - [Donate](#donate)
 
 ## What is this?
-This program takes a simple HTML page and converts it to an RSS format where URLs are more supported.
+This program takes a simple HTML page and converts it to an RSS format where
+URLs are more supported.
 
 ### Why does this help?
-In the terminal application [newsboat](https://github.com/newsboat/newsboat), RSS feeds that are not formatted this way does not recognize URLs as actual URLs, just text. When they are formatted this way, the URLs can be opened by uring url-view or by pressing numbers 1-9 (first link = 1, second = 2, etc). Similar to how Reddit RSS feeds look in newsboat. In other cases, some RSS feed providers don't provide as much content in their feeds as they do in their web pages. Programs in this repository rectify both of these issues.
+In the terminal application [newsboat](https://github.com/newsboat/newsboat),
+RSS feeds that are not formatted this way does not recognize URLs as actual
+URLs, just text. When they are formatted this way, the URLs can be opened by
+uring url-view or by pressing numbers 1-9 (first link = 1, second = 2, etc).
+Similar to how Reddit RSS feeds look in newsboat. In other cases, some RSS feed
+providers don't provide as much content in their feeds as they do in their web
+pages. Programs in this repository rectify both of these issues.
 
 ## List of Files
-- [rss_html.py](blob/main/rss_html.py): Convert a local HTML file to RSS. Intended for my own website, [husseinesmail.xyz](https://husseinesmail.xyz) but can be manipulated to work with other sites.
-- [rss_reddit_imgdl.py](blob/main/rss_reddit_imgdl.py): Takes an RSS feed from Reddit and downloads all images from the https://i.redd.it/ domain so they can be viewed from [newsboat](https://newsboat.org) offline. [r/unixporn](https://reddit.com/r/unixporn) is a good example of how this program can be used.
-- [rss_tiktok.py](blob/main/rss_tiktok.py): This uses Selenium to scrape the top posts of a person's TikTok profile and appends them to a RSS feed.
-- [rss_vsco.py](blob/main/rss_vsco.py): Similar to [rss_tiktok.py](blob/main/rss_tiktok.py), it scrapes the top posts of a profile and puts it in an RSS feed.
-- [rss_yfile.py](blob/main/rss_yfile.py): YFile newsletter at York University. They do have an RSS feed, but their RSS posts are only a fraction of what is displayed on each YFile article page. That annoyed me, so I thought to myself "Fine, I'll do it myself" (-Thanos).
+- [rss_html.py](blob/main/rss_html.py): Convert a local HTML file to RSS.
+  Intended for my own website, [husseinesmail.xyz](https://husseinesmail.xyz)
+  but can be manipulated to work with other sites.
+- [rss_reddit_imgdl.py](blob/main/rss_reddit_imgdl.py): Takes an RSS feed from
+  Reddit and downloads all images from the https://i.redd.it/ domain so they
+  can be viewed from [newsboat](https://newsboat.org) offline.
+  [r/unixporn](https://reddit.com/r/unixporn) is a good example of how this
+  program can be used.
+- [rss_tiktok.py](blob/main/rss_tiktok.py): This uses Selenium to scrape the
+  top posts of a person's TikTok profile and appends them to a RSS feed.
+- [rss_vsco.py](blob/main/rss_vsco.py): Similar to
+- [rss_yfile.py](blob/main/rss_yfile.py): YFile newsletter at York University.
+  They do have an RSS feed, but their RSS posts are only a fraction of what is
+  displayed on each YFile article page. That annoyed me, so I thought to myself
+  "Fine, I'll do it myself" (-Thanos).
 
 ## Installation
 ```
@@ -35,25 +57,48 @@ pip install requirements.txt
 ```
 python3 rss_html.py {HTML File location}
 ```
-This program takes 1 argument, and that is the file location of the HTML file. When outputting, the program will ask if you want to copy to clipboard, save to file, or print to standard output. You can also have multiple output types or all of them.
+This program takes 1 argument, and that is the file location of the HTML file.
+When outputting, the program will ask if you want to copy to clipboard, save to
+file, or print to standard output. You can also have multiple output types or
+all of them.
 
 ### rss_reddit_imgdl.py
 ```
 python3 rss_reddit_imgdl.py
 ```
-This program takes no arguments, though it will take a urls file, and those URLs should be Reddit RSS feeds. If there is no urls file, it will ask you for a URL before running.
+This program takes no arguments, though it will take a urls file, and those
+URLs should be Reddit RSS feeds. If there is no urls file, it will ask you for
+a URL before running.
+
+### rss_tiktok.py
+```
+python3 rss_tiktok.py
+```
+This program takes no arguments, but requires a few things to be set up in the
+program.  It requires a urls file in the file path that is set in the
+`TIKTOK_URLS` variable, and all folders in the user-configurable variables
+section must exist. This program uses Selenium to scrape each URL given, and at
+the moment must not be run in the background as some of the webpage loading
+required JavaScript. If anyone has a solution to this, please feel free to
+submit a pull request.
 
 ### rss_vsco.py
 ```
 python3 rss_vsco.py
 ```
-This program takes no arguments, but there are variables that you can configure at the beginning of the file (ex. RSS file location). This program will only output to a local RSS feed at the set location (in variable `RSS_FOLDER`). This currently does not work on Windows, because I have no Windows machine to test it on. Pull requests with a tested version are welcome.
+This program takes no arguments, but there are variables that you can configure
+at the beginning of the file (ex. RSS file location). This program will only
+output to a local RSS feed at the set location (in variable `RSS_FOLDER`). This
+currently does not work on Windows, because I have no Windows machine to test
+it on. Pull requests with a tested version are welcome.
 
 ### rss_yfile.py
 ```
 python3 rss_yfile.py
 ```
-This program takes no arguments, but there are variables that you can configure at the beginning of the file (ex. RSS file location). This program will only output to a local RSS feed at the set location (in variable `RSS_FOLDER`).
+This program takes no arguments, but there are variables that you can configure
+at the beginning of the file (ex. RSS file location). This program will only
+output to a local RSS feed at the set location (in variable `RSS_FOLDER`).
 
 ## Donate
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/husseinesmail)
