@@ -31,6 +31,26 @@ RSS_LINES_REMOVE = ['<!-- <icon></icon> -->', '<!-- <id></id> -->', '<!-- <logo>
 RSS_POS_INSERT = "<!-- FEEDS START -->"                                 # Used for RSS feed posts - Where to insert after
 URL_TEMPLATE_RSS = "https://raw.githubusercontent.com/hussein-esmail7/templates/master/templaterss.xml" # Template RSS on my Github that this program relies on
 
+# ========= COLOR CODES =========
+color_end               = '\033[0m'
+color_darkgrey          = '\033[90m'
+color_red               = '\033[91m'
+color_green             = '\033[92m'
+color_yellow            = '\033[93m'
+color_blue              = '\033[94m'
+color_pink              = '\033[95m'
+color_cyan              = '\033[96m'
+color_white             = '\033[97m'
+color_grey              = '\033[98m'
+
+# ========= COLORED STRINGS =========
+str_prefix_q            = f"[{color_pink}Q{color_end}]"
+str_prefix_y_n          = f"[{color_pink}y/n{color_end}]"
+str_prefix_ques         = f"{str_prefix_q}\t "
+str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
+str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
+str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
+
 def is_in_list(item, list):
     for list_item in list:
         if item in list_item:
@@ -39,7 +59,7 @@ def is_in_list(item, list):
 
 def main():
     if not os.path.exists(VSCO_URLS):
-        print(f"Error: {VSCO_URLS} does not exist. Please create the file in this folder and run the program again.")
+        print(f"{str_prefix_err}: {VSCO_URLS} does not exist. Please create the file in this folder and run the program again.")
         sys.exit(1)
     usernames = open(VSCO_URLS, 'r').readlines()
     usernames = [username.replace('\n', '') for username in usernames]
@@ -68,7 +88,6 @@ def main():
                 for rep in RSS_LINES_REMOVE:
                     lines[num] = lines[num].replace('    ' + rep + '\n', "")
             open(RSS_FOLDER + f"{username}.xml", 'w').writelines(lines)      # Replace template lines with filled in info
-        
         
         driver.set_window_size(200, 1000)
         driver.get(target_site)

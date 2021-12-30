@@ -9,16 +9,15 @@ Description: This program looks at Reddit RSS feed files, and downloads an
     needs to open a browser while looking at their RSS feed reader.
 '''
 
-import os
-import sys
-import re # Used to extract subreddit name from URL
-import urllib.request # Used for getting the initial RSS file
-import xml.etree.ElementTree # Used to parse, edit, and export XML
-import re
+import os               # Used for checking file paths
+import sys              # Used for exiting program
+import re               # Used to find image URLs in file
+import urllib.request   # Used for getting the initial RSS file
 
 # ========= VARIABLES ===========
-path_rss_save = "/home/hussein/Downloads/"
-path_img_save = "/home/hussein/Downloads/reddit/"
+RSS_FOLDER = os.path.expanduser("~/Documents/Local-RSS/Offline/")
+RSS_URLS = RSS_FOLDER + "urls"
+path_img_save = os.path.expanduser("~/Documents/Local-RSS/Offline/Media/")
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -73,26 +72,32 @@ def main():
     media.
     """
 
-    if yes_or_no("Use from file? "):
-        bool_continue_asking = True
-        file_decoded = ""
-        # "/Users/hussein/Downloads/unixporn.txt"
-        while bool_continue_asking:
-            file_decoded = input("File path to use: ")
-            bool_continue_asking = not yes_or_no("Is this correct: " + file_decoded + "? ")
-        file_decoded = open(file_decoded, "r").readlines()
-    else:
-        print("Test")
+    if not os.path.exists(RSS_FOLDER):
+        os.mkdir(RSS_FOLDER)
+    if not os.path.exists(path_img_save):
+        os.mkdir(path_img_save)
+    if not os.path.exists(RSS_URLS):
+        open(RSS_URLS, 'w').write("# URLs for rss_reddit_imgdl.py go here\n")
+        print(f"{str_prefix_err}: No URLs in {RSS_URLS}. Please add URLs to the file and rerun this program.")
+        sys.exit(1)
+    type_used = "NULL"
+    file_path_used = ""
     for URL_get in urls_to_convert:
         if validators.url(URL_get) or URL_get.startswith("file://"): # Checks if it is a URL or file location
             # Download the RSS file contents
             if validators.url(URL_get):
                 file_decoded = urllib.request.urlopen(URL_get).read().decode("utf-8")
+                type_used = "URL"
             elif os.path.exists(URL_get.replace("file://", ""):
-                file_decoded = ''.join(open(URL_get, 'r').readlines()).replace("\n", "")
+                file_path_used = URL_get.replace("file://", "")
+                file_decoded = ''.join(open(file_path_used, 'r').readlines()).replace("\n", "")
+                type_used = "FILE"
             # Calculate RSS file name
-            rss_file_name = URL_get[URL_get.index("/r/")+3:]
-            rss_file_name = re.search(r'\W+', rss_file_name).start()
+            if type_used == "URL": # If the link is a Reddit URL
+                rss_file_name = URL_get[URL_get.index("/r/")+3:]
+            elif type_used == "FILE": # If the link is a file URL
+                rss_file_name = file_path_used
+            rss_file_name = re.search(r'\W+', rss_file_name).start() + ".xml"
             # Look for base URLs (ex: "https://i.redd.it/")
             link_positions = [m.start() for m in re.finditer(str_reddit_image_url, file_decoded)]
             for link in link_positions:
@@ -104,7 +109,7 @@ def main():
                 file_decoded = file_decoded.replace(img_url, "file://" + path_img_save + img_name)
                 print("Done")
             # Save entire new file as .xml in a file path
-            with open(path_rss_save + "rss1.xml", "w") as f:
+            with open(RSS_FOLDER + rss_file_name, "w") as f:
                 f.write(file_decoded)
             print(done_rss_written)
         else: # Inputted string is not URL
