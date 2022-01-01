@@ -127,9 +127,6 @@ def main():
                 driver.get(URL_get) # Open the profile page
                 file_decoded = driver.find_element(By.XPATH, "/html/body/pre").text
                 driver.close()
-                # file_decoded = urllib.request.urlopen(URL_get)
-                # file_decoded = file_decoded.read()
-                # file_decoded = file_decoded.decode("utf-8")
                 type_used = "URL"
             elif os.path.exists(URL_get.replace("file://", "")):
                 file_path_used = URL_get.replace("file://", "")
@@ -142,24 +139,28 @@ def main():
                 rss_file_name = file_path_used
             rss_file_name = rss_file_name[:re.search(r'\W+', rss_file_name).start()] + ".xml"
             # Look for base URLs (ex: "https://i.redd.it/")
-            link_positions = [m.start() for m in re.finditer(str_reddit_image_url, file_decoded)]
-            print(link_positions)
-            for link in link_positions:
-                # print(str_prefix_info + str(link)) # Print position integer
-                file_decoded_tmp = "https://" + file_decoded[link:].split("https://")[1]
-                file_decoded_tmp = file_decoded_tmp.split("&")[0].split("?")[0]
-                img_url = file_decoded_tmp
-                if "i.redd.it" in img_url:
-                    print(color_red + "="*50 + color_end)
-                    img_name = img_url.split("/")[-1] # Get image name from URL
-                    if img_url.startswith("https://"):
-                        print(str_prefix_info + img_url + " " + img_name + " -> " + path_img_save + img_name)
-                        # print(str_prefix_info + "Saving " + img_name + "... ", end="")
-                        urllib.request.urlretrieve(img_url, path_img_save + img_name) # Save image
+            regex_link = re.compile("(https|http):\/\/i.redd.it\/(\w+){13}.(jpg|jpeg|png)")
+            file_decoded_tmp1 = ";".join(file_decoded.split("&")).split(";")
+            links_in_file = []
+            for line in file_decoded_tmp1:
+                if re.match("(https|http):\/\/i.redd.it\/(\w+){13}.(jpg|jpeg|png)", line):
+                    links_in_file.append(line)
+            if len(links_in_file) == 1:
+                print("1 link to download")
+            else:
+                print(str(len(links_in_file)) + " links to download")
+            for link in links_in_file: # For all found URLs
+                if "i.redd.it" in link or "i.imgur.com" in link:
+                    # Simple urllib.request save
+                    img_name = link.split("/")[-1] # Get image name from URL
+                    if link.startswith("https://"):
+                        urllib.request.urlretrieve(link, path_img_save + img_name) # Save image
                         time.sleep(3)
-                        # Replace entire found URL in new file
-                        file_decoded = file_decoded.replace(img_url, "file://" + path_img_save + img_name)
-                        print(str_prefix_done)
+                        # Replace entire found URL in new file (all instances)
+                        file_decoded = re.sub(link, "file://" + path_img_save + img_name, file_decoded)
+                        print(str_prefix_done + "Saved " + link)
+                # TODO: Imgur links
+                # TODO: Reddit Gallery links
             # Save entire new file as .xml in a file path
             with open(RSS_FOLDER + rss_file_name, "w") as f:
                 f.write(file_decoded)
