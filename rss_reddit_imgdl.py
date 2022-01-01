@@ -29,7 +29,7 @@ CHROMEDRIVER_LOCATION_LINUX = os.path.expanduser("~/Documents/Coding/py/referenc
 CHROMEDRIVER_LOCATION_MACOS = "/Users/hussein/Documents/Coding/py/reference/Chromedriver/chromedriver"
 CHROMEDRIVER_LOCATION_OTHER = "" # Chromedriver path if you are not using macOS or Linux
 bool_use_Brave = False
-bool_run_in_background = False
+bool_run_in_background = True
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
