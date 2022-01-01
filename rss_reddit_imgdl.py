@@ -16,7 +16,9 @@ import urllib.request   # Used for getting the initial RSS file
 import validators       # Used to check URLs
 from selenium import webdriver
 import platform
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import *
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options  # Used to add aditional settings (ex. run in background)
 from selenium.webdriver.common.by import By
 import time
@@ -25,10 +27,6 @@ import time
 RSS_FOLDER = os.path.expanduser("~/Documents/Local-RSS/Offline/")
 RSS_URLS = RSS_FOLDER + "urls"
 path_img_save = os.path.expanduser("~/Documents/Local-RSS/Offline/Media/")
-CHROMEDRIVER_LOCATION_LINUX = os.path.expanduser("~/Documents/Coding/py/reference/Chromedriver/chromedriver")
-CHROMEDRIVER_LOCATION_MACOS = "/Users/hussein/Documents/Coding/py/reference/Chromedriver/chromedriver"
-CHROMEDRIVER_LOCATION_OTHER = "" # Chromedriver path if you are not using macOS or Linux
-bool_use_Brave = False
 bool_run_in_background = True
 
 # ========= COLOR CODES =========
@@ -92,14 +90,6 @@ def main():
         open(RSS_URLS, 'w').write("# URLs for rss_reddit_imgdl.py go here\n")
         print(f"{str_prefix_err}: No URLs in {RSS_URLS}. Please add URLs to the file and rerun this program.")
         sys.exit(1)
-    # Determining OS type for Chromedriver location
-    os_type = platform.platform().split("-")[0]
-    if os_type == "Linux":
-        chromedriver_path = CHROMEDRIVER_LOCATION_LINUX
-    elif os_type == "macOS":
-        chromedriver_path = CHROMEDRIVER_LOCATION_MACOS
-    else:
-        chromedriver_path = CHROMEDRIVER_LOCATION_OTHER
 
     # Read and parse urls file
     url_file_lines = open(RSS_URLS, 'r').readlines()
@@ -116,14 +106,11 @@ def main():
             type_used = "NULL" # Online URL or local file
             # Download the RSS file contents
             if validators.url(URL_get):
-                options = Options() # Used for Chromedriver
+                options = Options() # Used for running in background
                 if bool_run_in_background:
                     options.add_argument("--headless")  # Runs in background
-                if bool_use_Brave:
-                    options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-                    driver = webdriver.Chrome(options=options)
-                else:
-                    driver = webdriver.Chrome(chromedriver_path, options=options)
+                service = Service(ChromeDriverManager().install())
+                driver = webdriver.Chrome(service=service, options=options)
                 driver.get(URL_get) # Open the profile page
                 file_decoded = driver.find_element(By.XPATH, "/html/body/pre").text
                 driver.close()
