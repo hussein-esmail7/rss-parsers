@@ -2,7 +2,7 @@
 rss_vsco.py
 Hussein Esmail
 Created: 2021 09 30
-Updated: 2021 09 30
+Updated: 2022 01 02
 Description: This program gets the most recent VSCO picture URLs from a user
     then adds it to an RSS file at the chosen desktop location.
 '''
@@ -15,7 +15,7 @@ import getpass # Used to get username
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service # Used to set Chrome location
-from selenium.webdriver.chrome.options import Options  # Used to add aditional settings (ex. run in background)
+from selenium.webdriver.chrome.options import Options # Used to add aditional settings (ex. run in background)
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
 
 # ========= VARIABLES ===========
@@ -83,12 +83,12 @@ def main():
         urls_images = []
         dict_urls = []
         lines_new = []
-        RSS_DESCRIPTION = f"VSCO pictures by @{username}"  # Used for RSS feed posts
+        RSS_DESCRIPTION = f"VSCO pictures by @{username}" # Used for RSS feed posts
         RSS_TITLE = f"VSCO - @{username}"
         
-        if not os.path.exists(RSS_FOLDER):                              # Make dir if it does not exist
+        if not os.path.exists(RSS_FOLDER): # Make dir if it does not exist
             os.makedirs(RSS_FOLDER)
-        if os.path.exists(RSS_FOLDER + f"{username}.xml"):                   # If RSS fole exists, read it only             
+        if os.path.exists(RSS_FOLDER + f"{username}.xml"): # If RSS fole exists, read it only
             lines = open(RSS_FOLDER + f"{username}.xml", 'r').readlines()
         else:                                                           # Make RSS if it does not exist
             urllib.request.urlretrieve(URL_TEMPLATE_RSS, RSS_FOLDER + f"{username}.xml")
@@ -144,7 +144,7 @@ def main():
                 content_desc = content_desc.replace("\t", "")
                 content_desc = content_desc.replace("&#13;", "")        # :before and :after (not needed)
                 content_desc = content_desc.replace("&", "&amp;")       # Replace HTML elements in RSS description
-                content_desc = content_desc.replace("'", "&apos;")  
+                content_desc = content_desc.replace("'", "&apos;")
                 content_desc = content_desc.replace('"', "&quot;")
                 content_desc = content_desc.replace("<", "&lt;")
                 content_desc = content_desc.replace(">", "&gt;")
@@ -155,7 +155,7 @@ def main():
                     lines_new.append(f"\t\t<title>New post by @{username}</title>")
                 lines_new.append(f"\t\t<published>{entry['time_formatted']}</published>") # Ex. 2021-07-28T20:57:31Z
                 lines_new.append(f"\t\t<updated>{entry['time_formatted']}</updated>")
-                lines_new.append(f"\t\t<link href=\"{url_html}\"/>")    # Original RSS uses entry.links[0]['href']. .id is neater, and title doesn't need to be in link
+                lines_new.append(f"\t\t<link href=\"{url_html}\"/>")# Original RSS uses entry.links[0]['href']. .id is neater, and title doesn't need to be in link
                 lines_new.append(f"\t\t<author>")                   # Adding author of post (1/3)
                 lines_new.append(f"\t\t\t<name>@{username}</name>") # Adding author of post (2/3)
                 lines_new.append(f"\t\t</author>")                  # Adding author of post (3/3)
@@ -165,10 +165,10 @@ def main():
                 lines_new.append(f"\t\t</content>")
                 lines_new.append(f"\t</entry>") # End of RSS post
 
-        lines_new = [line + "\n" for line in lines_new]                 # Done for formatting
+        lines_new = [line + "\n" for line in lines_new] # Done for formatting
         rss_delimiter_pos = [line.strip() for line in lines].index(RSS_POS_INSERT)
         lines = lines[:rss_delimiter_pos+1] + lines_new + lines[rss_delimiter_pos+1:] # Join the array
-        open(RSS_FOLDER + f"{username}.xml", 'w').writelines(lines)          # Replace previous RSS lines
+        open(RSS_FOLDER + f"{username}.xml", 'w').writelines(lines) # Replace previous RSS lines
 
     # Cleanup
     driver.close()  # Close the browser
