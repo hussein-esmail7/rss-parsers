@@ -98,7 +98,7 @@ def main():
     url_file_lines = open(RSS_URLS, 'r').readlines()
     for line in url_file_lines:
         # This is for processing URLs and removing comments and whitespace
-        line_first_word = line.split()[0] # Get first word (since URLs don't have spaces)
+        line_first_word = line.strip()split()[0] # Get first word (since URLs don't have spaces)
         if line_first_word[0] != "#":
             # If it is not a comment
             # Treat it as a link. The link checker will verify if it is valid
