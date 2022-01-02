@@ -63,8 +63,15 @@ def main():
     if not os.path.exists(VSCO_URLS):
         print(f"{str_prefix_err}: {VSCO_URLS} does not exist. Please create the file in this folder and run the program again.")
         sys.exit(1)
-    usernames = open(VSCO_URLS, 'r').readlines()
-    usernames = [username.replace('\n', '') for username in usernames]
+    url_file_lines = open(VSCO_URLS, 'r').readlines()
+    usernames = []
+    for line in usernames:
+        # This is for processing URLs and removing comments and whitespace
+        line_first_word = line.strip()split()[0] # Get first word (since URLs don't have spaces)
+        if line_first_word[0] != "#":
+            # If it is not a comment
+            # Treat it as a link. The link checker will verify if it is valid
+            usernames.append(line_first_word)
     options = Options()  
     options.add_argument("--log-level=OFF");
     options.add_argument("--headless")  # Run in background
