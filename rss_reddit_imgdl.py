@@ -2,7 +2,7 @@
 rss_reddit_imgdl.py
 Hussein Esmail
 Created: 2021 11 11
-Updated: 2021 12 29
+Updated: 2022 01 01
 Description: This program looks at Reddit RSS feed files, and downloads an
     offline copy of all images an videos (whatever it can) so that the images
     can be viewed offline. This is meant to reduce the number of times the user
@@ -10,24 +10,22 @@ Description: This program looks at Reddit RSS feed files, and downloads an
 '''
 
 import os               # Used for checking file paths
-import sys              # Used for exiting program
+import sys              # Used for exiting program and temporary print lines
 import re               # Used to find image URLs in file
 import urllib.request   # Used for getting the initial RSS file
 import validators       # Used to check URLs
+import time             # Used for delaying download requests
 from selenium import webdriver
-import platform
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import *
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options  # Used to add aditional settings (ex. run in background)
 from selenium.webdriver.common.by import By
-import time
 
 # ========= VARIABLES ===========
-RSS_FOLDER = os.path.expanduser("~/Documents/Local-RSS/Offline/")
-RSS_URLS = RSS_FOLDER + "urls"
-path_img_save = os.path.expanduser("~/Documents/Local-RSS/Offline/Media/")
-bool_run_in_background = True
+RSS_FOLDER              = os.path.expanduser("~/Documents/Local-RSS/Offline/")
+RSS_URLS                = RSS_FOLDER + "urls"
+path_img_save           = RSS_FOLDER + "Media/"
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -49,13 +47,18 @@ str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
 str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
 str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
 
+# ========= LOADING STRINGS =========
+don0 = f"[{color_cyan} / {color_end}]\t "
+don1 = f"[{color_cyan} - {color_end}]\t "
+don2 = f"[{color_cyan} \ {color_end}]\t "
+don3 = f"[{color_cyan} | {color_end}]\t "
+
 msg_error_not_reddit    = str_prefix_err + "Not a subreddit RSS URL"
 msg_error_not_url       = str_prefix_err + "Not a URL: "
 q_print_contents        = str_prefix_q + "Print file contents? "
 done_rss_written        = str_prefix_done + "RSS File written"
 str_reddit_image_url    = "https://i.redd.it"
 urls_to_convert         = []
-# urls_to_convert         = ["https://reddit.com/r/unixporn/search.rss?q=flair:'Screenshot'&sort=new&restrict_sr=on&feature=legacy_search"]
 
 def yes_or_no(str_ask):
     while True:
@@ -101,14 +104,14 @@ def main():
             # Treat it as a link. The link checker will verify if it is valid
             urls_to_convert.append(line_first_word)
     for URL_get in urls_to_convert:
-        if validators.url(URL_get) or URL_get.startswith("file://"): # Checks if it is a URL or file location
+        # Check if it is a URL or file location
+        if validators.url(URL_get) or URL_get.startswith("file://"):
             file_path_used = ""
             type_used = "NULL" # Online URL or local file
             # Download the RSS file contents
             if validators.url(URL_get):
                 options = Options() # Used for running in background
-                if bool_run_in_background:
-                    options.add_argument("--headless")  # Runs in background
+                options.add_argument("--headless")  # Runs in background
                 service = Service(ChromeDriverManager().install())
                 driver = webdriver.Chrome(service=service, options=options)
                 driver.get(URL_get) # Open the profile page
@@ -133,20 +136,35 @@ def main():
                 if re.match("(https|http):\/\/i.redd.it\/(\w+){13}.(jpg|jpeg|png)", line):
                     links_in_file.append(line)
             if len(links_in_file) == 1:
-                print("1 link to download")
+                print("1 item to download")
             else:
-                print(str(len(links_in_file)) + " links to download")
+                print(str(len(links_in_file)) + " items to download")
             for link in links_in_file: # For all found URLs
                 if "i.redd.it" in link or "i.imgur.com" in link:
                     # Simple urllib.request save
                     img_name = link.split("/")[-1] # Get image name from URL
                     if link.startswith("https://"):
+                        # Loading print statements
+                        # There has to be a few seconds in between requests
+                        sys.stdout.write("\r" + don0)
+                        time.sleep(0.75)
+                        sys.stdout.flush()
+                        sys.stdout.write("\r" + don1)
+                        time.sleep(0.75)
+                        sys.stdout.flush()
+                        sys.stdout.write("\r" + don2)
+                        time.sleep(0.75)
+                        sys.stdout.flush()
+                        sys.stdout.write("\r" + don3)
+                        time.sleep(0.75)
+
+                        # Save image
                         urllib.request.urlretrieve(link, path_img_save + img_name) # Save image
-                        time.sleep(3)
                         # Replace entire found URL in new file (all instances)
                         file_decoded = re.sub(link, "file://" + path_img_save + img_name, file_decoded)
+                        sys.stdout.write("\r")
                         print(str_prefix_done + "Saved " + link)
-                # TODO: Imgur links
+                    # TODO: Imgur links
                 # TODO: Reddit Gallery links
             # Save entire new file as .xml in a file path
             with open(RSS_FOLDER + rss_file_name, "w") as f:
