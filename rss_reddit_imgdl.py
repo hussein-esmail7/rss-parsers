@@ -140,7 +140,25 @@ def main():
             else:
                 print(str(len(links_in_file)) + " items to download")
             for link in links_in_file: # For all found URLs
-                if "i.redd.it" in link or "i.imgur.com" in link:
+                """
+&lt;span&gt;
+	&lt;a href=&quot;https://www.reddit.com/gallery/rud4x6&quot;&gt;[link]&lt;/a&gt;
+&lt;/span&gt;
+                """
+                images_to_download = []
+                if "reddit.com/gallery/" in link:
+                    driver = webdriver.Chrome(service=service, options=options)
+                    driver.get(link)            # Open the target URL
+                    pic_list = driver.find_element(By.XPATH, "//ul").find_elements(By.XPATH, ".//a")
+                    for pic in pic_list:
+                        pic_url = pic.get_attribute("href").split('?')[0]
+                        if pic_url.endswith('.jpg') or pic_url.endswith('.png'):
+                            pic_url = pic_url.replace('preview.', 'i.')
+                        else:                           # Unknown exceptions
+                            print("Video or non-JPG, not done.")
+                            print(pic_url)
+                        images_to_download.append(pic_url) # Add formatted URL to array
+                elif "i.redd.it" in link or "i.imgur.com" in link:
                     # Simple urllib.request save
                     img_name = link.split("/")[-1] # Get image name from URL
                     if link.startswith("https://"):

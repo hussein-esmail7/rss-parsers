@@ -73,7 +73,6 @@ def main():
             # Treat it as a link. The link checker will verify if it is valid
             usernames.append(line_first_word)
     options = Options()  
-    options.add_argument("--log-level=OFF");
     options.add_argument("--headless")  # Run in background
     service = Service(ChromeDriverManager(log_level=0).install())
     driver = webdriver.Chrome(service=service, options=options)
