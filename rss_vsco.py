@@ -9,27 +9,21 @@ Description: This program gets the most recent VSCO picture URLs from a user
 
 import os
 import sys # To exit the program
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options  # Used to add aditional settings (ex. run in background)
-import platform
 import datetime
 import urllib.request
 import getpass # Used to get username
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service # Used to set Chrome location
+from selenium.webdriver.chrome.options import Options  # Used to add aditional settings (ex. run in background)
+from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
 
-bool_run_in_background = True
-os_type = platform.platform().split("-")[0] # Used to get operating system type
-if os_type == "Linux":
-    chromedriver_path = os.path.expanduser("~/Documents/Coding/py/reference/Chromedriver/chromedriver")
-elif os_type == "macOS":
-    chromedriver_path = f"/Users/{getpass.getuser()}/Documents/Coding/py/reference/Chromedriver/chromedriver"
-print(chromedriver_path)
-
-RSS_FOLDER = os.path.expanduser("~/Documents/Local-RSS/VSCO/")
-RSS_TERM = "VSCO"
-VSCO_URLS = RSS_FOLDER + "urls"
-RSS_LINES_REMOVE = ['<!-- <icon></icon> -->', '<!-- <id></id> -->', '<!-- <logo></logo> -->', '<link rel="self" href="[LINK TO THIS RSS]" type="application/atom+xml" />', '<link rel="alternate" href="[LINK ALTERNATE]" type="text/html" />']
-RSS_POS_INSERT = "<!-- FEEDS START -->"                                 # Used for RSS feed posts - Where to insert after
-URL_TEMPLATE_RSS = "https://raw.githubusercontent.com/hussein-esmail7/templates/master/templaterss.xml" # Template RSS on my Github that this program relies on
+# ========= VARIABLES ===========
+RSS_FOLDER              = os.path.expanduser("~/Documents/Local-RSS/VSCO/")
+RSS_TERM                = "VSCO"
+VSCO_URLS               = RSS_FOLDER + "urls" # Folder location for URLs list
+RSS_POS_INSERT          = "<!-- FEEDS START -->" # Line to insert feed posts
+URL_TEMPLATE_RSS        = "https://raw.githubusercontent.com/hussein-esmail7/templates/master/templaterss.xml" # Template RSS on my Github that this program relies on
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -51,6 +45,14 @@ str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
 str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
 str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
 
+RSS_LINES_REMOVE = [
+    '<!-- <icon></icon> -->',
+    '<!-- <id></id> -->',
+    '<!-- <logo></logo> -->',
+    '<link rel="self" href="[LINK TO THIS RSS]" type="application/atom+xml" />',
+    '<link rel="alternate" href="[LINK ALTERNATE]" type="text/html" />'
+]
+
 def is_in_list(item, list):
     for list_item in list:
         if item in list_item:
@@ -64,9 +66,10 @@ def main():
     usernames = open(VSCO_URLS, 'r').readlines()
     usernames = [username.replace('\n', '') for username in usernames]
     options = Options()  
-    if bool_run_in_background:
-        options.add_argument("--headless")  # Adds the argument that hides the window
-    driver = webdriver.Chrome(chromedriver_path, options=options)
+    options.add_argument("--log-level=OFF");
+    options.add_argument("--headless")  # Run in background
+    service = Service(ChromeDriverManager(log_level=0).install())
+    driver = webdriver.Chrome(service=service, options=options)
     for username in usernames:
         site_base = f"https://vsco.co/{username}/"
         target_site = f"{site_base}gallery"
@@ -91,7 +94,7 @@ def main():
         
         driver.set_window_size(200, 1000)
         driver.get(target_site)
-        urls_all = [item.get_attribute("href") for item in driver.find_elements_by_xpath("//a[@href]")]
+        urls_all = [item.get_attribute("href") for item in driver.find_elements(By.XPATH, "//a[@href]")]
         for item in urls_all:
             if f"{site_base}media/" in item:
                 urls_images.append(item)
@@ -104,9 +107,9 @@ def main():
         for entry in dict_urls: # For each post URL
             driver.get(entry["url_html"]) # Get HTML of each page
             # Get URL for each image
-            entry["url_imgs"] = ["https:" + item.get_attribute("src")[:item.get_attribute("src").index("?")] for item in driver.find_elements_by_xpath("//img[@src]")]
+            entry["url_imgs"] = ["https:" + item.get_attribute("src")[:item.get_attribute("src").index("?")] for item in driver.find_elements(By.XPATH, "//img[@src]")]
             # Get the time the post in question is posted
-            time_unformatted = driver.find_element_by_xpath('//time/span[1]').text + " /" + driver.find_element_by_xpath('//time/span[2]').text
+            time_unformatted = driver.find_element(By.XPATH, '//time/span[1]').text + " /" + driver.find_element(By.XPATH, '//time/span[2]').text
             # Convert letter casing to match RSS format
             time_unformatted = time_unformatted.replace("pm", "PM").replace("am", "AM")
             if len(time_unformatted.split("/")[1].split(":")[0]) == 1:
@@ -117,7 +120,7 @@ def main():
                 entry["time_formatted"] = entry["time_formatted"] + datetime.timedelta(hours=12)
             entry["time_formatted"] = entry["time_formatted"].astimezone().replace(microsecond=0).isoformat()
             # Get caption of the post
-            description_possible = driver.find_elements_by_xpath('//p')
+            description_possible = driver.find_elements(By.XPATH, '//p')
             for item in description_possible:
                 if "css-1whdjid-Caption" in item.get_attribute("class") and len(item.text) != 0:
                     entry['desc'] = item.text
