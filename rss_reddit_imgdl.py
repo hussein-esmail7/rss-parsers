@@ -112,7 +112,7 @@ def main():
             if validators.url(URL_get):
                 options = Options() # Used for running in background
                 options.add_argument("--headless")  # Runs in background
-                service = Service(ChromeDriverManager().install())
+                service = Service(ChromeDriverManager(log_level=0).install())
                 driver = webdriver.Chrome(service=service, options=options)
                 driver.get(URL_get) # Open the profile page
                 file_decoded = driver.find_element(By.XPATH, "/html/body/pre").text
