@@ -12,6 +12,7 @@ Description: This program is meant to run all the other RSS parser programs in
 import os
 import sys
 import glob # Lists all files in directory with wildcard
+import argparse # Parses given arguments
 
 # ========= VARIABLES ===========
 paths_exclude = ["rss_html.py"] # Programs to exclude even if they meet all requirements
@@ -48,6 +49,29 @@ def yes_or_no(str_ask):
             print(f"{str_prefix_err} {error_neither_y_n}")
 
 def main():
+    # https://www.onlinetutorialspoint.com/python/how-to-pass-command-line-arguments-in-python.html
+    parser = argparse.ArgumentParser()
+
+    # Commands to create
+    parser.add_argument("-v", "--verbose", action="store_true",help="Verbose mode", dest="verbose")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Quiet mode (overrides --verbose)", dest="quiet")
+
+    args = parser.parse_args()
+
+    # TODO: Delete this block of code when program is done
+    if args.verbose and args.quiet:
+        print("You cannot have quiet and verbose on at the same time! - Set to quiet")
+        args.verbose = False
+    elif args.quiet:
+        print("Quiet mode on")
+    elif args.verbose:
+        print("Verbose mode on")
+    else:
+        print("Normal print mode")
+
+    print(args.verbose)
+
+
     # Path of where this Python file is
     path_this_file = os.path.dirname(os.path.realpath(__file__))
     # Program must contain "rss" in filename and be in same folder
