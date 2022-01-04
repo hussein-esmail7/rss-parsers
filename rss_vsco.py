@@ -67,7 +67,7 @@ def main():
     usernames = []
     for line in usernames:
         # This is for processing URLs and removing comments and whitespace
-        line_first_word = line.strip()split()[0] # Get first word (since URLs don't have spaces)
+        line_first_word = line.strip().split()[0] # Get first word (since URLs don't have spaces)
         if line_first_word[0] != "#":
             # If it is not a comment
             # Treat it as a link. The link checker will verify if it is valid

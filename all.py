@@ -15,7 +15,10 @@ import glob # Lists all files in directory with wildcard
 import argparse # Parses given arguments
 
 # ========= VARIABLES ===========
-paths_exclude = ["rss_html.py"] # Programs to exclude even if they meet all requirements
+paths_exclude = [
+    "rss_html.py",
+    "rss_tiktok.py"
+] # Programs to exclude even if they meet all requirements
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -35,6 +38,7 @@ str_prefix_y_n          = f"[{color_pink}y/n{color_end}]"
 str_prefix_ques         = f"{str_prefix_q}\t "
 str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
 str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
+str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
 
 def yes_or_no(str_ask):
     while True:
@@ -58,31 +62,34 @@ def main():
 
     args = parser.parse_args()
 
-    # TODO: Delete this block of code when program is done
     if args.verbose and args.quiet:
-        print("You cannot have quiet and verbose on at the same time! - Set to quiet")
+        print(str_prefix_err + "Cannot have --verbose and --quiet. Using --quiet")
         args.verbose = False
-    elif args.quiet:
-        print("Quiet mode on")
-    elif args.verbose:
-        print("Verbose mode on")
-    else:
-        print("Normal print mode")
-
-    print(args.verbose)
-
 
     # Path of where this Python file is
     path_this_file = os.path.dirname(os.path.realpath(__file__))
     # Program must contain "rss" in filename and be in same folder
     programs_run = glob.glob(path_this_file + "/*rss*.py")
-    for program in programs_run:
-        if program.split("/")[-1] in paths_exclude:
-            programs_run.remove(program)
-            print(color_red + "I will not run " + program + color_end)
-        else:
-            print("I will run " + program)
 
+    # Removing excluded programs to run
+    programs_run = sorted([program for program in programs_run if program.split("/")[-1] not in paths_exclude])
+
+    args_send = " " # Arguments to send
+    if args.quiet:
+        if len(args_send.strip()) == 0:
+            args_send += "-"
+        args_send += "q"
+    elif args.verbose:
+        if len(args_send.strip()) == 0:
+            args_send += "-"
+        args_send += "v"
+
+    for program_run in programs_run:
+        if not args.quiet:
+            print("="*6 + " "*3 + "="*20)
+            print(str_prefix_info + "Running " + program_run.split("/")[-1] + args_send)
+        os.system("python3 " + program_run + args_send)
+    
     sys.exit()
 
 if __name__ == "__main__":
