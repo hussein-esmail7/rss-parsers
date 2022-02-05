@@ -17,6 +17,7 @@ import argparse # Parses given arguments
 # ========= VARIABLES ===========
 paths_exclude = [
     "rss_html.py",
+    "rss_reddit_imgdl.py",
     "rss_tiktok.py"
 ] # Programs to exclude even if they meet all requirements
 
@@ -89,7 +90,7 @@ def main():
             print("="*6 + " "*3 + "="*20)
             print(str_prefix_info + "Running " + program_run.split("/")[-1] + args_send)
         os.system("python3 " + program_run + args_send)
-    
+
     sys.exit()
 
 if __name__ == "__main__":
