@@ -6,3 +6,4 @@ requests
 selenium
 urllib
 validators
+webdriver_manager
