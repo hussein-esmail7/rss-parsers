@@ -2,7 +2,7 @@
 all.py
 Hussein Esmail
 Created: 2022 01 03
-Updated: 2022 01 03
+Updated: 2022 04 14
 Description: This program is meant to run all the other RSS parser programs in
     this folder. The reason this is not a .bashrc alias is because arguments
     that are parsed to this program will be carried over to all the programs
@@ -18,6 +18,7 @@ import argparse # Parses given arguments
 paths_exclude = [
     "rss_html.py",
     "rss_reddit_imgdl.py",
+    "rss_yfile.py",
     "rss_tiktok.py"
 ] # Programs to exclude even if they meet all requirements
 
