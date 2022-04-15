@@ -69,6 +69,7 @@ def main():
     url_file_lines = open(VSCO_URLS, 'r').readlines()
     usernames = []
     for line in url_file_lines:
+
         # This is for processing URLs and removing comments and whitespace
         line_first_word = line.strip().split()[0] # Get first word (since URLs don't have spaces)
         if line_first_word[0] != "#":
