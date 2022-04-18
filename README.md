@@ -35,14 +35,19 @@ pages. Programs in this repository rectify both of these issues.
   Reddit and downloads all images from the https://i.redd.it/ domain so they
   can be viewed from [newsboat](https://newsboat.org) offline.
   [r/unixporn](https://reddit.com/r/unixporn) is a good example of how this
-  program can be used.
+  program can be used. *Note: I haven't been using this one recently.*
 - [rss_tiktok.py](blob/main/rss_tiktok.py): This uses Selenium to scrape the
   top posts of a person's TikTok profile and appends them to a RSS feed.
-- [rss_vsco.py](blob/main/rss_vsco.py): Similar to
+- [rss_vsco.py](blob/main/rss_vsco.py): Gets post URLs along with URLs to the
+  images directly of a VSCO page using just the username in the `urls` file.
+  This looks at the first loaded posts on a page, so it won't load all of them,
+  just the most recent ones (usually the top 45).
 - [rss_yfile.py](blob/main/rss_yfile.py): YFile newsletter at York University.
   They do have an RSS feed, but their RSS posts are only a fraction of what is
   displayed on each YFile article page. That annoyed me, so I thought to myself
-  "Fine, I'll do it myself" (-Thanos).
+  "Fine, I'll do it myself" (-Thanos). *Note: I've been using
+  [https://morss.it/https://yfile.news.yorku.ca/feed/atom/](https://morss.it/https://yfile.news.yorku.ca/feed/atom/)
+  instead of this program recently and it's been working well.*
 
 ## Installation
 ```
@@ -51,7 +56,7 @@ cd rss_parsers/
 pip install requirements.txt
 ```
 
-## Usage 
+## Usage
 
 ### rss_html.py
 ```
