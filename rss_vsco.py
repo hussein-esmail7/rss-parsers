@@ -7,11 +7,11 @@ Description: This program gets the most recent VSCO picture URLs from a user
     then adds it to an RSS file at the chosen desktop location.
 '''
 
+import datetime
+import getpass # Used to get username
 import os
 import sys # To exit the program
-import datetime
 import urllib.request
-import getpass # Used to get username
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service # To set Chrome location
@@ -19,7 +19,6 @@ from selenium.webdriver.chrome.options import Options # For "run in background"
 from selenium.webdriver.common.by import By # Used to get type to search for
 
 # ========= VARIABLES ===========
-BOOL_PRINTS             = True
 RSS_FOLDER              = os.path.expanduser("~/Documents/Local-RSS/VSCO/")
 RSS_TERM                = "VSCO"
 VSCO_URLS               = RSS_FOLDER + "urls" # Folder location for URLs list
@@ -45,6 +44,7 @@ str_prefix_ques         = f"{str_prefix_q}\t "
 str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
 str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
 str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
+str_prefix_indent       = f"[{color_red}>>>>{color_end}]\t "
 
 RSS_LINES_REMOVE = [
     '<!-- <icon></icon> -->',
@@ -61,6 +61,9 @@ def is_in_list(item, list):
     return False
 
 def main():
+    BOOL_PRINTS = True # True = allow prints. False = no output whatsoever
+    if is_in_list("-q", sys.argv) or  is_in_list("--quiet", sys.argv):
+        BOOL_PRINTS = False
     if not os.path.exists(VSCO_URLS):
         print(f"{str_prefix_err}: {VSCO_URLS} does not exist. Please create the file in this folder and run the program again.")
         sys.exit(1)
@@ -69,20 +72,19 @@ def main():
     url_file_lines = open(VSCO_URLS, 'r').readlines()
     usernames = []
     for line in url_file_lines:
-
         # This is for processing URLs and removing comments and whitespace
-        line_first_word = line.strip().split()[0] # Get first word (since URLs don't have spaces)
-        if line_first_word[0] != "#":
-            # If it is not a comment
-            # Treat it as a link. The link checker will verify if it is valid
-            usernames.append(line_first_word)
-            print(line_first_word)
+        line_first_word = line.strip().split()
+        if len(line_first_word) > 0:
+            line_first_word = line_first_word[0] # Get first word (since URLs don't have spaces)
+            if line_first_word[0] != "#":
+                # If first word in the line is not a comment, treat as username
+                usernames.append(line_first_word)
     options = Options()
     options.add_argument("--headless")  # Run in background
     service = Service(ChromeDriverManager(log_level=0).install())
     driver = webdriver.Chrome(service=service, options=options)
     if BOOL_PRINTS:
-        print(f"{str_prefix_info}Usenames: {len(usernames)}")
+        print(f"{str_prefix_info}Usernames found in urls file: {len(usernames)}")
 
     for username in usernames:
         site_base = f"https://vsco.co/{username}/"
@@ -116,7 +118,7 @@ def main():
         driver.get(target_site)
         urls_all = [item.get_attribute("href") for item in driver.find_elements(By.XPATH, "//a[@href]")]
         if BOOL_PRINTS:
-            print(f"{str_prefix_info}\t This page has {len(urls_all)}")
+            print(f"{str_prefix_indent}\t This page has {len(urls_all)} posts")
         for item in urls_all:
             if f"{site_base}media/" in item:
                 urls_images.append(item)
@@ -128,8 +130,11 @@ def main():
                 })
         for entry in dict_urls: # For each post URL
             driver.get(entry["url_html"]) # Get HTML of each page
-            # Get URL for each image
-            entry["url_imgs"] = ["https:" + item.get_attribute("src")[:item.get_attribute("src").index("?")] for item in driver.find_elements(By.XPATH, "//img[@src]")]
+            # Get URL for each image and add "https:" at start of each entry
+            for item in driver.find_elements(By.XPATH, "//img[@src]"):
+                url_unformatted = item.get_attribute("src")
+                if "im.vsco.co" in url_unformatted: # So that the favicon doesn't qualify as well (breaks the program)
+                    entry["url_imgs"] = ["https:" + url_unformatted[:url_unformatted.index("?")]]
             # Get the time the post in question is posted
             time_unformatted = driver.find_element(By.XPATH, '//time/span[1]').text + " /" + driver.find_element(By.XPATH, '//time/span[2]').text
             # Convert letter casing to match RSS format
