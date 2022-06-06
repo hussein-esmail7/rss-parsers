@@ -19,7 +19,8 @@ paths_exclude = [
     "rss_html.py",
     "rss_reddit_imgdl.py",
     "rss_yfile.py",
-    "rss_tiktok.py"
+    "rss_tiktok.py",
+    "rss_scaruffi.py"
 ] # Programs to exclude even if they meet all requirements
 
 # ========= COLOR CODES =========
