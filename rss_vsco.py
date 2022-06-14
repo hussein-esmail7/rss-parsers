@@ -84,7 +84,10 @@ def main():
     service = Service(ChromeDriverManager(log_level=0).install())
     driver = webdriver.Chrome(service=service, options=options)
     if BOOL_PRINTS:
-        print(f"{str_prefix_info}Usernames found in urls file: {len(usernames)}")
+        plural = "profile"
+        if len(usernames) != 1:
+            plural += "s"
+        print(f"{str_prefix_info}Checking {len(usernames)} {plural}")
 
     for username in usernames:
         # For each username in the config file
@@ -97,7 +100,7 @@ def main():
         RSS_TITLE = f"VSCO - @{username}"
         entries_skipped = 0 # How many posts that are seen but the user already has
         if BOOL_PRINTS:
-            print(f"{str_prefix_info}User: {username}")
+            print(f"{str_prefix_info}Profile: {username}")
         if not os.path.exists(RSS_FOLDER): # Make dir if it does not exist
             os.makedirs(RSS_FOLDER)
         if os.path.exists(RSS_FOLDER + f"{username}.xml"):
@@ -116,10 +119,11 @@ def main():
             # Replace template lines with filled in info
 
         driver.set_window_size(200, 1000)
+        driver.implicitly_wait(10) # Timeout 10s when getting any element/page
         driver.get(target_site) # Go to the user's VSCO homepage
         urls_all = [item.get_attribute("href") for item in driver.find_elements(By.XPATH, "//a[@href]")]
-        if BOOL_PRINTS:
-            print(f"{str_prefix_indent}\t This page has {len(urls_all)} posts")
+        # if BOOL_PRINTS:
+        #     print(f"{str_prefix_indent}\t This page has {len(urls_all)} posts")
         for item in urls_all:
             if f"{site_base}media/" in item:
                 dict_urls.append({
@@ -141,17 +145,16 @@ def main():
             # This loop gets rid of entries that already exist in the RSS file,
             # to save time of getting HTML links
             if entry["url_html"] in rss_file_searchable and dict_urls[entry_num]["convert"]:
-                # print(f"{str_prefix_indent} Skipping {url_temp}")
+                # If the URL to be downloaded already exists in the RSS, do not
+                # get it again
                 dict_urls[entry_num]["convert"] = False # Do not convert this URL
                 entries_skipped += 1
-                # Entries are already sorted from newest to oldest
-                # Therefore, if it reaches one it already has, it has all
-                # future ones as well. Next part skips all future ones
-                for entry_num_i, entry_i in enumerate(dict_urls[entry_num+1:]):
-                    dict_urls[entry_num_i]["convert"] = False # Do not convert
-                    entries_skipped += 1
         # Let the user know how many new posts out of all it got
-        print(str_prefix_indent + "Remaining: " + str(len_orig - entries_skipped) + " from " + str(len_orig))
+        if BOOL_PRINTS:
+            plural = "entries"
+            if len_orig - entries_skipped == 1:
+                plural = "entry"
+            print(f"\t\t{len_orig - entries_skipped} new {plural} (of {len_orig})")
         # Visit each new URL
         for entry in dict_urls: # For each post URL
             if entry["convert"]: # If the program needs to convert that URL
@@ -159,7 +162,9 @@ def main():
                 # Get URL for each image and add "https:" at start of each entry
                 for item in driver.find_elements(By.XPATH, "//img[@src]"):
                     url_unformatted = item.get_attribute("src")
-                    if "im.vsco.co" in url_unformatted: # So that the favicon doesn't qualify as well (breaks the program)
+                    if "im.vsco.co" in url_unformatted: # Ignore the favicon
+                        # All images qualify this requirement except the
+                        # favicon. The favicon breaks the program
                         entry["url_imgs"] = ["https:" + url_unformatted[:url_unformatted.index("?")]]
                 # Get the time the post in question is posted
                 time_unformatted = driver.find_element(By.XPATH, '//time/span[1]').text + " /" + driver.find_element(By.XPATH, '//time/span[2]').text
