@@ -165,7 +165,7 @@ def main():
                     if "im.vsco.co" in url_unformatted: # Ignore the favicon
                         # All images qualify this requirement except the
                         # favicon. The favicon breaks the program
-                        entry["url_imgs"] = ["https:" + url_unformatted[:url_unformatted.index("?")]]
+                        entry["url_imgs"] = [url_unformatted[:url_unformatted.index("?")]]
                 # Get the time the post in question is posted
                 time_unformatted = driver.find_element(By.XPATH, '//time/span[1]').text + " /" + driver.find_element(By.XPATH, '//time/span[2]').text
                 # Convert letter casing to match RSS format
