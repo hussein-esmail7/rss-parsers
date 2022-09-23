@@ -1,4 +1,5 @@
 feedparser
+logging
 lxml
 operator
 pyperclip

@@ -9,6 +9,7 @@ Description: This program gets the most recent VSCO picture URLs from a user
 
 import datetime
 import getpass # Used to get username
+import logging # Used to turn off chromedriver logs
 import os
 import sys # To exit the program
 import urllib.request
@@ -81,7 +82,9 @@ def main():
                 usernames.append(line_first_word)
     options = Options()
     options.add_argument("--headless")  # Run in background
-    service = Service(ChromeDriverManager(log_level=0).install())
+    os.environ['WDM_LOG'] = str(logging.NOTSET) # Do not output logs for CDM
+    cdm = ChromeDriverManager()
+    service = Service(cdm.install())
     driver = webdriver.Chrome(service=service, options=options)
     if BOOL_PRINTS:
         plural = "profile"
