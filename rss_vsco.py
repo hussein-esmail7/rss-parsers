@@ -12,7 +12,7 @@ import getpass # Used to get username
 import logging # Used to turn off chromedriver logs
 import os
 import sys # To exit the program
-import urllib.request
+import urllib.request # To check internet connection and download urls
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service # To set Chrome location
@@ -61,7 +61,17 @@ def is_in_list(item, list):
             return True
     return False
 
+def is_internet_connected():
+    try:
+        urllib.request.urlopen('http://google.com')
+        return True
+    except:
+        return False
+
 def main():
+    if not is_internet_connected():
+        print(f"{str_prefix_err}You're not connected to the internet!")
+        sys.exit(1)
     BOOL_PRINTS = True # True = allow prints. False = no output whatsoever
     if is_in_list("-q", sys.argv) or  is_in_list("--quiet", sys.argv):
         BOOL_PRINTS = False

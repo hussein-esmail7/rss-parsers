@@ -65,7 +65,17 @@ def is_in_list(item, list):
             return True
     return False
 
+def is_internet_connected():
+    try:
+        urllib.request.urlopen('http://google.com')
+        return True
+    except:
+        return False
+
 def main():
+    if not is_internet_connected():
+        print(f"{str_prefix_err}You're not connected to the internet!")
+        sys.exit(1)
     # Determining OS type for Chromedriver location
     os_type = platform.platform().split("-")[0]
     if os_type == "Linux":
@@ -119,14 +129,14 @@ def main():
         # Cleanup
         driver.close()  # Close the browser
         options.extensions.clear() # Clear the options that were set
-        
+
         if not os.path.exists(RSS_FOLDER):                              # Make dir if it does not exist
             os.makedirs(RSS_FOLDER)
             # if not BOOL_QUIET:
             #     print(f"Made dir: {RSS_FOLDER}")
-        if os.path.exists(RSS_FOLDER + RSS_FILENAME):                   # If RSS fole exists, read it only  
-            # if not BOOL_QUIET:        
-            #     print(f"Read RSS file: {RSS_FILENAME}")   
+        if os.path.exists(RSS_FOLDER + RSS_FILENAME):                   # If RSS fole exists, read it only
+            # if not BOOL_QUIET:
+            #     print(f"Read RSS file: {RSS_FILENAME}")
             lines = open(RSS_FOLDER + RSS_FILENAME, 'r').readlines()
         else:                                                           # Make RSS if it does not exist
             urllib.request.urlretrieve(URL_TEMPLATE_RSS, RSS_FOLDER + RSS_FILENAME)
