@@ -20,8 +20,13 @@ paths_exclude = [
     "rss_reddit_imgdl.py",
     "rss_yfile.py",
     "rss_tiktok.py",
-    "rss_scaruffi.py"
+    "rss_scaruffi.py",
+    "rss_workinculture.py"
 ] # Programs to exclude even if they meet all requirements
+
+# rss_yfile.py: I personally don't use this file anymore
+# rss_scaruffi.py: Request by someone else
+# rss_workinculture.py: Work in progress
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -42,6 +47,7 @@ str_prefix_ques         = f"{str_prefix_q}\t "
 str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
 str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
 str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
+error_neither_y_n = "You must either type 'y' or 'n' (or 'q' to exit)"
 
 def yes_or_no(str_ask):
     while True:
