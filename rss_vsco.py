@@ -56,6 +56,8 @@ RSS_LINES_REMOVE = [
 ]
 
 def is_in_list(item, list):
+    # This function searches for a substring within every entry of an array
+    # Useful for finding if a URL is in a text file at all, when every line of the file is a string in the array
     for list_item in list:
         if item in list_item:
             return True
@@ -167,7 +169,7 @@ def main():
             plural = "entries"
             if len_orig - entries_skipped == 1:
                 plural = "entry"
-            print(f"\t\t{len_orig - entries_skipped} new {plural} (of {len_orig})")
+            print(f"\t {len_orig - entries_skipped} new {plural}")
         # Visit each new URL
         for entry in dict_urls: # For each post URL
             if entry["convert"]: # If the program needs to convert that URL
