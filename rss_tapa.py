@@ -18,6 +18,8 @@ from selenium.webdriver.chrome.options import Options # Used to add aditional se
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
 # from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
 import urllib.request # To check internet connection and download urls
+import datetime
+from dateutil.relativedelta import relativedelta
 
 # ========= VARIABLES ===========
 bool_run_in_background  = True
@@ -66,6 +68,36 @@ def is_internet_connected():
     except:
         return False
     
+def get_past_date(str_days_ago):
+    # https://stackoverflow.com/a/43139601/8100123
+    # This function returns a datetime object 'n' days ago if you input "n days ago" (which is how TAPA formats posted dates)
+    TODAY = datetime.date.today()
+    splitted = str_days_ago.split()
+    if len(splitted) == 1 and splitted[0].lower() == 'today':
+        return str(TODAY.isoformat())
+    elif len(splitted) == 1 and splitted[0].lower() == 'yesterday':
+        date = TODAY - relativedelta(days=1)
+        return str(date.isoformat())
+    elif splitted[1].lower() in ['hour', 'hours', 'hr', 'hrs', 'h']:
+        date = datetime.datetime.now() - relativedelta(hours=int(splitted[0]))
+        return str(date.date().isoformat())
+    elif splitted[1].lower() in ['day', 'days', 'd']:
+        date = TODAY - relativedelta(days=int(splitted[0]))
+        return str(date.isoformat())
+    elif splitted[1].lower() in ['wk', 'wks', 'week', 'weeks', 'w']:
+        date = TODAY - relativedelta(weeks=int(splitted[0]))
+        return str(date.isoformat())
+    elif splitted[1].lower() in ['mon', 'mons', 'month', 'months', 'm']:
+        date = TODAY - relativedelta(months=int(splitted[0]))
+        return str(date.isoformat())
+    elif splitted[1].lower() in ['yrs', 'yr', 'years', 'year', 'y']:
+        date = TODAY - relativedelta(years=int(splitted[0]))
+        return str(date.isoformat())
+    else:
+        print("ERROR in 'get_past_date()': Wrong Argument format: " + str_days_ago)
+        sys.exit(2)
+
+
 def main():
     if not is_internet_connected():
         print(f"{str_prefix_err}You're not connected to the internet!")
@@ -113,19 +145,24 @@ def main():
         arr_entries.append({
             "title": test,
             "url": url,
-            "date": date,
+            "date": get_past_date(date),
             "description": str_post_description_empty
         })
 
-
-        # TODO: Check the number of posts there are until a title matches one that is already in the RSS file
-
+    lines_new = [] # All new lines will be put here before going into the RSS file
+    bool_continue_parsing_to_rss = True # Continue until it finds an entry that's already there
     for entry_num in range(len(arr_entries)):
-        # Check descriptions, if it doesn't already have one
-        if arr_entries[entry_num]["description"] == str_post_description_empty:
-            driver.get(arr_entries[entry_num]["url"])
+        entry = arr_entries[entry_num]
+        url_html = entry["url"]
+        if is_in_list(url_html, lines):
+            bool_continue_parsing_to_rss = False
+        elif bool_continue_parsing_to_rss:
+            # If the URL is not in the list, add it. 
+            # If bool_continue_parsing_to_rss is False, then don't do any more conversions
+            int_new_postings += 1
+            # Get the description
+            driver.get(url_html)
             description = driver.find_element(By.CLASS_NAME, "vcex-post-content-c").text.replace("\n", "\n\n")
-            
             # Replace strings that need to be replaced:
             description = description.replace("&", "&amp;") # Must be before intentional additions of "&" symbols
             description = "&lt;p&gt;" + description # Start the first "<p>" element
@@ -136,25 +173,16 @@ def main():
             description = description.replace(">", "&gt;")
             description = description.replace("\n", "&lt;/p&gt; &lt;p&gt;") # "</p> <p>"
             description = description + "&lt;/p&gt;" # End the last "</p>" element
-
             arr_entries[entry_num]["description"] = description
-    
-    lines_new = [] # All new lines will be put here before going into the RSS file
-    for entry_num in range(len(arr_entries)):
-        entry = arr_entries[entry_num]
-        url_html = entry["url"]
-        if not is_in_list(url_html, lines):
-            int_new_postings += 1
             # Determine who posted this job posting
             # In every posting, the first line is "Posted by ..." followed by "\n"
             username = entry["description"].replace("Posted by ", "")[:entry["description"].index("&lt;/p&gt;")].replace("&lt;/p&gt;", "").replace("&lt;p&gt;", "")
             # TODO: PLACEHOLDERS
-            entry['time_formatted'] = ""
             # Convert to RSS/XML Format
             lines_new.append(f"<entry>")
             lines_new.append(f"<title>{entry['title']}</title>")
-            lines_new.append(f"<published>{entry['time_formatted']}</published>") # Ex. 2021-07-28T20:57:31Z
-            lines_new.append(f"<updated>{entry['time_formatted']}</updated>")
+            lines_new.append(f"<published>{entry['date']}</published>") # Ex. 2021-07-28T20:57:31Z
+            lines_new.append(f"<updated>{entry['date']}</updated>")
             lines_new.append(f"<link href=\"{url_html}\"/>") # Original RSS uses entry.links[0]['href']. .id is neater, and title doesn't need to be in link
             # Adding author of post
             lines_new.append(f"<author>")
