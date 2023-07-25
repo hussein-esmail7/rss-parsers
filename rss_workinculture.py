@@ -113,8 +113,8 @@ def main():
     if not os.path.exists(WIC_URLS):
         print(f"{str_prefix_err}: {WIC_URLS} does not exist. Please create the file in this folder and run the program again.")
         sys.exit(1)
-    elif BOOL_PRINTS:
-        print(f"{str_prefix_info}urls file exists - {WIC_URLS}")
+    # elif BOOL_PRINTS:
+    #     print(f"{str_prefix_info}urls file exists - {WIC_URLS}")
     url_file_lines = open(WIC_URLS, 'r').readlines()
     WIC_URLS_LIST = [] # The array of URLs to search the RSS feeds for
 
@@ -144,8 +144,6 @@ def main():
             if line_first_word[0] != "#":
                 # If first word in the line is not a comment, treat as username
                 WIC_URLS_LIST.append(line_first_word)
-    driver = webdriver.Chrome()
-    driver.set_window_size(200, 1000) # Window size
 
     arr_postings = []
     driver.get("https://www.workinculture.ca/JobBoard.aspx?itemid=&region=Ontario&levelid=&city=&ddfrom=&ddto=&pdfrom=&pdto=")
