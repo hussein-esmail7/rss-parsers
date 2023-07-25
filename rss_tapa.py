@@ -2,7 +2,7 @@
 rss_tapa.py
 Hussein Esmail
 Created: 2023 07 08
-Updated: 2023 07 20
+Updated: 2023 07 22
 Description: RSS Parser for TAPA (Toronto Alliance for the Performing Arts) Employment Opportunity Listings
 '''
 
@@ -55,7 +55,8 @@ str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
 
 def is_in_list(item, list):
     # This function searches for a substring within every entry of an array
-    # Useful for finding if a URL is in a text file at all, when every line of the file is a string in the array
+    # Useful for finding if a URL is in a text file at all, when every line 
+    # of the file is a string in the array
     for list_item in list:
         if item in list_item:
             return True
@@ -70,7 +71,8 @@ def is_internet_connected():
     
 def get_past_date(str_days_ago):
     # https://stackoverflow.com/a/43139601/8100123
-    # This function returns a datetime object 'n' days ago if you input "n days ago" (which is how TAPA formats posted dates)
+    # This function returns a datetime object 'n' days ago 
+    # if you input "n days ago" (which is how TAPA formats posted dates)
     TODAY = datetime.date.today()
     splitted = str_days_ago.split()
     if len(splitted) == 1 and splitted[0].lower() == 'today':
@@ -177,7 +179,6 @@ def main():
             # Determine who posted this job posting
             # In every posting, the first line is "Posted by ..." followed by "\n"
             username = entry["description"].replace("Posted by ", "")[:entry["description"].index("&lt;/p&gt;")].replace("&lt;/p&gt;", "").replace("&lt;p&gt;", "")
-            # TODO: PLACEHOLDERS
             # Convert to RSS/XML Format
             lines_new.append(f"<entry>")
             lines_new.append(f"<title>{entry['title']}</title>")
