@@ -20,8 +20,7 @@ paths_exclude = [
     "rss_reddit_imgdl.py",
     "rss_yfile.py",
     "rss_tiktok.py",
-    "rss_scaruffi.py",
-    "rss_workinculture.py"
+    "rss_scaruffi.py"
 ] # Programs to exclude even if they meet all requirements
 
 # rss_yfile.py: I personally don't use this file anymore
