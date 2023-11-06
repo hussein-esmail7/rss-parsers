@@ -30,7 +30,7 @@ from selenium.webdriver.chrome.options import Options # Used to add aditional se
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
 
 # ========= VARIABLES ===========
-RSS_FOLDER              = os.path.expanduser("~/Documents/Local-RSS/WorkInCulture/")
+RSS_FOLDER              = os.path.expanduser("~/.config/rss-parsers/WorkInCulture/")
 RSS_TERM                = "WorkInCulture"
 WIC_URLS                = RSS_FOLDER + "urls" # Folder location for URLs list
 RSS_POS_INSERT          = "<!-- FEEDS START -->" # Line to insert feed posts

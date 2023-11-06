@@ -24,7 +24,7 @@ from selenium.webdriver.chrome.options import Options  # Used to add aditional s
 from selenium.webdriver.common.by import By
 
 # ========= VARIABLES ===========
-RSS_FOLDER              = os.path.expanduser("~/Documents/Local-RSS/Offline/")
+RSS_FOLDER              = os.path.expanduser("~/.config/rss-parsers/reddit_imgdl/")
 RSS_URLS                = RSS_FOLDER + "urls"
 path_img_save           = RSS_FOLDER + "Media/"
 

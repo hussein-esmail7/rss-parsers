@@ -19,9 +19,9 @@ import urllib                   # Used to copy template RSS file from my Github
 
 # == User-configurable variables
 BOOL_QUIET = False               # True for quiet mode, False for allow prints
-RSS_FOLDER = os.path.expanduser("~/Documents/Local-RSS/Tiktok/") # Where to store individual files
+RSS_FOLDER = os.path.expanduser("~/.config/rss-parsers/Tiktok/") # Where to store individual files
 RSS_DESCRIPTION = "Tiktok recent videos"
-TIKTOK_URLS = os.path.expanduser("~/Documents/Local-RSS/Tiktok/urls")
+TIKTOK_URLS = os.path.expanduser(f"{RSS_FOLDER}urls")
 CHROMEDRIVER_LOCATION_LINUX = os.path.expanduser("~/Documents/Coding/py/reference/Chromedriver/chromedriver")
 CHROMEDRIVER_LOCATION_MACOS = "/Users/hussein/Documents/Coding/py/reference/Chromedriver/chromedriver"
 CHROMEDRIVER_LOCATION_OTHER = "" # Chromedriver path if you are not using macOS or Linux

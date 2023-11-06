@@ -15,7 +15,7 @@ import requests                 # Used to get HTML
 import urllib                   # Used to copy template RSS file from my Github
 
 # == User-configurable variables
-RSS_FOLDER = os.path.expanduser("~/Documents/Local-RSS/")
+RSS_FOLDER = os.path.expanduser("~/.config/rss-parsers/")
 RSS_FILENAME = "yfile.xml"
 RSS_TITLE = "YFile"
 RSS_TERM = "YFile"  # TODO: YFile uses many terms in each post as categories. Add functionality for this later

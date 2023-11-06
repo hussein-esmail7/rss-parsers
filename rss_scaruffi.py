@@ -19,7 +19,7 @@ from selenium.webdriver.common.by import By # Used to determine type to search f
 # from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
 
 # ========= VARIABLES ===========
-RSS_FOLDER              = os.path.expanduser("~/Documents/Local-RSS/")
+RSS_FOLDER              = os.path.expanduser("~/.config/rss-parsers/")
 RSS_FILENAME            = "scaruffi1.xml" # Output file name
 RSS_POS_INSERT          = "<!-- FEEDS START -->" # Line to insert feed posts
 bool_run_in_background  = True

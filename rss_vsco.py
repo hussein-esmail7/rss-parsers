@@ -20,7 +20,7 @@ from selenium.webdriver.chrome.options import Options # For "run in background"
 from selenium.webdriver.common.by import By # Used to get type to search for
 
 # ========= VARIABLES ===========
-RSS_FOLDER              = os.path.expanduser("~/Documents/Local-RSS/VSCO/")
+RSS_FOLDER              = os.path.expanduser("~/.config/rss-parsers/VSCO/")
 RSS_TERM                = "VSCO"
 VSCO_URLS               = RSS_FOLDER + "urls" # Folder location for URLs list
 RSS_POS_INSERT          = "<!-- FEEDS START -->" # Line to insert feed posts
