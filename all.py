@@ -2,7 +2,7 @@
 all.py
 Hussein Esmail
 Created: 2022 01 03
-Updated: 2022 04 14
+Updated: 2023 11 11
 Description: This program is meant to run all the other RSS parser programs in
     this folder. The reason this is not a .bashrc alias is because arguments
     that are parsed to this program will be carried over to all the programs
@@ -15,6 +15,7 @@ import glob # Lists all files in directory with wildcard
 import argparse # Parses given arguments
 
 # ========= VARIABLES ===========
+path_src_folder = "src/" # Where the RSS program files are stored
 paths_exclude = [
     "rss_html.py",
     "rss_reddit_imgdl.py",
@@ -61,7 +62,6 @@ def yes_or_no(str_ask):
             print(f"{str_prefix_err} {error_neither_y_n}")
 
 def main():
-    # https://www.onlinetutorialspoint.com/python/how-to-pass-command-line-arguments-in-python.html
     parser = argparse.ArgumentParser()
 
     # Commands to create
@@ -77,7 +77,7 @@ def main():
     # Path of where this Python file is
     path_this_file = os.path.dirname(os.path.realpath(__file__))
     # Program must contain "rss" in filename and be in same folder
-    programs_run = glob.glob(path_this_file + "/*rss*.py")
+    programs_run = glob.glob(f"{path_this_file}/{path_src_folder}/*rss*.py".replace("//", "/"))
 
     # Removing excluded programs to run
     programs_run = sorted([program for program in programs_run if program.split("/")[-1] not in paths_exclude])
@@ -94,7 +94,6 @@ def main():
 
     for program_run in programs_run:
         if not args.quiet:
-            print("="*6 + " "*3 + "="*20)
             print(str_prefix_info + "Running " + program_run.split("/")[-1] + args_send)
         os.system("python3 " + program_run + args_send)
 
