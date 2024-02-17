@@ -9,9 +9,9 @@ Description: This program is meant to run all the other RSS parser programs in
     this one runs, such as --verbose, --quiet, --version, etc.
 '''
 
-import os
-import sys
-import glob # Lists all files in directory with wildcard
+from os import path, system # Less memory than importing the entire os library
+from sys import exit # Less memory than importing the entire sys library
+from glob import glob # Lists all files in directory with wildcard
 import argparse # Parses given arguments
 
 # ========= VARIABLES ===========
@@ -21,7 +21,9 @@ paths_exclude = [
     "rss_reddit_imgdl.py",
     "rss_yfile.py",
     "rss_tiktok.py",
-    "rss_scaruffi.py"
+    "rss_scaruffi.py",
+    "rss_booksalefinder_v1.py",
+    "rss_booksalefinder_v2.py"
 ] # Programs to exclude even if they meet all requirements
 
 # rss_yfile.py: I personally don't use this file anymore
@@ -57,7 +59,7 @@ def yes_or_no(str_ask):
         elif y_n[0] == "n":
             return False
         if y_n[0] == "q":
-            sys.exit()
+            exit()
         else:
             print(f"{str_prefix_err} {error_neither_y_n}")
 
@@ -75,9 +77,9 @@ def main():
         args.verbose = False
 
     # Path of where this Python file is
-    path_this_file = os.path.dirname(os.path.realpath(__file__))
+    path_this_file = path.dirname(path.realpath(__file__))
     # Program must contain "rss" in filename and be in same folder
-    programs_run = glob.glob(f"{path_this_file}/{path_src_folder}/*rss*.py".replace("//", "/"))
+    programs_run = glob(f"{path_this_file}/{path_src_folder}/*rss*.py".replace("//", "/"))
 
     # Removing excluded programs to run
     programs_run = sorted([program for program in programs_run if program.split("/")[-1] not in paths_exclude])
@@ -95,9 +97,9 @@ def main():
     for program_run in programs_run:
         if not args.quiet:
             print(str_prefix_info + "Running " + program_run.split("/")[-1] + args_send)
-        os.system("python3 " + program_run + args_send)
+        system("python3 " + program_run + args_send)
 
-    sys.exit()
+    exit()
 
 if __name__ == "__main__":
     main()
