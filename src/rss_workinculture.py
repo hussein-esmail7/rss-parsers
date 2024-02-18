@@ -16,7 +16,7 @@ Description: This program gets job postings from an existing Work In Culture
 #           found, scan the next page (and the next, and the next, ...)
 # - TODO: Program doesn't use the URLs file. At the moment, the search URL is hardcoded
 
-import dateutil.parser as parser
+import dateutil.parser as parser # Used to convert date to RSS ISO format
 import logging # Used to turn off chromedriver logs
 import os
 import sys # To exit the program
