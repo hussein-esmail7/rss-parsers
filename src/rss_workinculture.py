@@ -71,12 +71,6 @@ def is_in_list(item, list):
             return True
     return False
 
-def is_in_list(item, list):
-    for list_item in list:
-        if item in list_item:
-            return True
-    return False
-
 def is_internet_connected():
     try:
         urllib.request.urlopen('http://google.com')
