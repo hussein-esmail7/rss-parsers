@@ -143,7 +143,7 @@ def main():
         for entry in book_sale_entries_dict:
             if city in entry['city']:
                 query_book_sales.append(entry)
-    print(f"{str_prefix_info} {len(query_book_sales)} results for {query_cities}")
+    # print(f"{str_prefix_info} {len(query_book_sales)} results for {query_cities}")
     if not os.path.exists(RSS_FOLDER): # Make dir if it does not exist
         os.makedirs(RSS_FOLDER)
     if os.path.exists(RSS_FOLDER + f"{RSS_FILE_NAME}"):
@@ -165,6 +165,7 @@ def main():
     
     lines = open(RSS_FOLDER + f"{RSS_FILE_NAME}", 'r').readlines()
     lines_new = [] # Lines to be added to RSS feed
+    int_new_posts = len(query_book_sales)
     for posting in query_book_sales:
         # Format description for RSS {START}
         description_tmp = erase_blank_lines(posting['dates']).replace(";", ",") + ". "
@@ -194,15 +195,18 @@ def main():
             lines_new.append("<description>" + posting['description'] + "</description>")
             lines_new.append(f"</item>") # End of RSS post
         else:
-            print(f"{str_prefix_warn} Did not add {posting['url']} - already present")
+            int_new_posts =- 1
+            # print(f"{str_prefix_warn} Did not add {posting['url']} - already present")
             # if not is_in_list(posting['url'], lines) and is_in_list(posting['description'], lines):
     # Write new lines to RSS file
+    if int_new_posts > 0:
+        print("\t" + str(int_new_posts) + " new posts")
     lines_new = [line + "\n" for line in lines_new] # Done for formatting
     # print(''.join(lines_new))
     rss_delimiter_pos = [line.strip() for line in lines].index(RSS_POS_INSERT) # Find the RSS Delimiter out of the stripped version of the array (each line stripped)
     lines = lines[:rss_delimiter_pos+1] + lines_new + lines[rss_delimiter_pos+1:] # Join the array at the RSS delimiter position
     open(RSS_FOLDER + f"{RSS_FILE_NAME}", 'w').writelines(lines) # Replace previous RSS lines
-    print(f"{str_prefix_info} Wrote to {RSS_FILE_NAME}")
+    # print(f"{str_prefix_info} Wrote to {RSS_FILE_NAME}")
 
     sys.exit()
 
