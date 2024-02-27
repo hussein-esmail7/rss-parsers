@@ -142,6 +142,7 @@ def main():
         # print(article.text)
         # test = arr_articles[article_num].find_element(By.XPATH, "//*/h2/a").text
         test = arr_articles[article_num].find_element(By.CLASS_NAME, "wpex-inherit-color-important").text.replace("Employment Opportunity: ", "")
+        test = test.replace("Job Opportunity: ", "")
         url = arr_articles[article_num].find_element(By.CLASS_NAME, "wpex-inherit-color-important").get_attribute('href')
         date = arr_articles[article_num].find_element(By.CLASS_NAME, "wpex-card-date").text.replace("Published ", "")
         arr_entries.append({
