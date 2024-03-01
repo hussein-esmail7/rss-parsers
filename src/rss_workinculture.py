@@ -2,13 +2,14 @@
 rss_workinculture.py
 Hussein Esmail
 Created: 2023 05 06
-Updated: 2023 07 25
+Updated: 2024 03 01
 Description: This program gets job postings from an existing Work In Culture 
     RSS feed because the RSS feed they give contains nothing except the actual 
     URL to the posting.
 '''
 
 # Next steps:
+# - TODO: Redo entire program (site was redesigned since last edit)
 # - TODO: Each page is normally 10 entries long. This program only looks at the 
 #           first (newest) page. If none of the entries were in the file 
 #           beforehand (are all new), it's possible the 11th on the second page 
