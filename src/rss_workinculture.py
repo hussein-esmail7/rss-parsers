@@ -9,7 +9,10 @@ Description: This program gets job postings from an existing Work In Culture
 '''
 
 # Next steps:
-# - TODO: Redo entire program (site was redesigned since last edit)
+# - TODO: Redo entire program (site was redesigned since last edit). Currently 
+#           in progress but the final RSS feed generation is untested due to 
+#           slow internet connection
+# - TODO: Convert RSS file to RSS 2.0 (refer to rss_citt.py)
 # - TODO: Each page is normally 10 entries long. This program only looks at the 
 #           first (newest) page. If none of the entries were in the file 
 #           beforehand (are all new), it's possible the 11th on the second page 
@@ -30,14 +33,20 @@ from selenium.webdriver.chrome.service import Service # Used to set Chrome locat
 from selenium.webdriver.chrome.options import Options # Used to add aditional settings (ex. run in background)
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
 
+# Libraries addd 2024 03 01
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import TimeoutException
+
 # ========= VARIABLES ===========
 RSS_FOLDER              = os.path.expanduser("~/.config/rss-parsers/WorkInCulture/")
 RSS_TERM                = "WorkInCulture"
-WIC_URLS                = RSS_FOLDER + "urls" # Folder location for URLs list
 RSS_POS_INSERT          = "<!-- FEEDS START -->" # Line to insert feed posts
 URL_TEMPLATE_RSS        = "https://raw.githubusercontent.com/hussein-esmail7/templates/master/templaterss.xml" # Template RSS on my Github that this program relies on
-bool_run_in_background  = True
-RSS_FILE_NAME = "workinculture.xml"
+bool_run_in_background  = False # TODO: Temporary
+RSS_FILE_NAME = "workinculture_test.xml"
 RSS_TITLE = "WorkInCulture Job Postings"
 RSS_DESCRIPTION = "WorkInCulture Job Postings"
 bool_prints = True
@@ -61,6 +70,7 @@ str_prefix_ques         = f"{str_prefix_q}\t "
 str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
 str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
 str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
+str_prefix_warn         = f"[{color_yellow}WARN{color_end}]\t "
 str_prefix_indent       = f"[{color_red}>>>>{color_end}]\t "
 
 def is_in_list(item, list):
@@ -81,9 +91,14 @@ def is_internet_connected():
     
 def main():
     int_new_postings = 0
+    url = "https://workinculture.ca/job-search/#q=&type-of-listing=paid-employment"
+    arr_postings = []
+    delay = 10 # Maximum timeout in seconds when initially loading the page with all the listings
+
     if not is_internet_connected():
         print(f"{str_prefix_err}You're not connected to the internet!")
         sys.exit(1)
+    print("\tLoading...")
     options = Options()
     if bool_run_in_background:
         options.add_argument("--headless")  # Run in background
@@ -92,14 +107,9 @@ def main():
     service = Service(cdm.install())
     driver = webdriver.Chrome(service=service, options=options)
     BOOL_PRINTS = True # True = allow prints. False = no output whatsoever
-    if is_in_list("-q", sys.argv) or  is_in_list("--quiet", sys.argv):
+    if is_in_list("-q", sys.argv) or is_in_list("--quiet", sys.argv):
         BOOL_PRINTS = False
-    if not os.path.exists(WIC_URLS):
-        print(f"{str_prefix_err}: {WIC_URLS} does not exist. Please create the file in this folder and run the program again.")
-        sys.exit(1)
-    url_file_lines = open(WIC_URLS, 'r').readlines()
-    WIC_URLS_LIST = [] # The array of URLs to search the RSS feeds for
-
+    
     if not os.path.exists(RSS_FOLDER): # Make dir if it does not exist
         os.makedirs(RSS_FOLDER)
     if os.path.exists(RSS_FOLDER + f"{RSS_FILE_NAME}"):
@@ -118,65 +128,113 @@ def main():
             #     lines[num] = lines[num].replace('    ' + rep + '\n', "")
         open(RSS_FOLDER + f"{RSS_FILE_NAME}", 'w').writelines(lines)
 
-    for line in url_file_lines:
-        # This is for processing URLs and removing comments and whitespace
-        line_first_word = line.strip().split()
-        if len(line_first_word) > 0:
-            line_first_word = line_first_word[0] # Get first word (since URLs don't have spaces)
-            if line_first_word[0] != "#":
-                # If first word in the line is not a comment, treat as username
-                WIC_URLS_LIST.append(line_first_word)
+    driver.get(url)
 
-    arr_postings = []
-    driver.get("https://www.workinculture.ca/JobBoard.aspx?itemid=&region=Ontario&levelid=&city=&ddfrom=&ddto=&pdfrom=&pdto=")
+    # Load JavaScript elements list of job positings
+    try:
+        _ = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '/html/body/div/main/div[1]/div/div/div[3]/div/div/div[1]/div/ol/li')))
+        # print("Page is ready!")
+    except TimeoutException:
+        print(f"{str_prefix_err} Loading webpage took longer than {delay}s. Exiting...")
+        sys.exit(1)
     
-    rows = driver.find_elements(By.XPATH, '/html/body/form/div[4]/div[4]/div[1]/div/div/div[@id="jobResultList" and @class="table-responsive"]/table/tbody/tr')
-    for rows_num in range(1, len(rows)):
-        arr_postings.append({
-            'title': rows[rows_num].find_element(By.XPATH, ".//td[1]/a").text,
-            'url': rows[rows_num].find_element(By.XPATH, ".//td[1]/a").get_attribute("href"),
-            'organization': rows[rows_num].find_element(By.XPATH, ".//td[1]/p").text,
-            'city': rows[rows_num].find_element(By.XPATH, ".//td[2]").text,
-            'type': rows[rows_num].find_element(By.XPATH, ".//td[3]").text, # Part time or full time
-            'deadline': rows[rows_num].find_element(By.XPATH, ".//td[4]").text, # Format: "Sep 01, 2023"
-            'date': rows[rows_num].find_element(By.XPATH, ".//td[5]").text, # Format: "Sep 01, 2023"
-            'description': "", # To be filled if the entry doesn't exist in the RSS file,
-            'guid': "" # Used to prevent saving duplicates in RSS file
-        })
-        arr_postings[-1]['guid'] = re.sub("[^0-9a-zA-Z\s]+", "", arr_postings[-1]['title']+arr_postings[-1]['date']+arr_postings[-1]['url'])
+    job_list_elements = driver.find_elements(By.XPATH, '/html/body/div/main/div[1]/div/div/div[3]/div/div/div[1]/div/ol/li') # The ordered list that contains list elements (one per job post)
+    print(f"Number of rows (job postings): {len(job_list_elements)}")
+    
+    bool_continue_searching = True
+    for list_item_num, list_item in enumerate(job_list_elements):
+        # If it couldn't get the last element, don't get the next one (aka end the for loop early)
+        if bool_continue_searching:
+            # Wait for this specific list_item to load (list may be too long for it to all load at the beginning)
+            # Locates the title element of the element
+            try:
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);") # Scroll to bottom of webpage
+                _ = WebDriverWait(list_item, delay).until(EC.presence_of_element_located((By.XPATH, ".//article/a/div[2]/h4")))
+                # print("Page is ready!")
+            except TimeoutException:
+                print(f"{str_prefix_err} Post {list_item_num+1} of {len(job_list_elements)} took longer than {delay}s to load.")
+                print(f"{str_prefix_warn} Only treating top {list_item_num} postings.")
+                bool_continue_searching = False
+            # This if statement is here twice because if this one isn't here, it will still try to get info from the element 
+            # it wasn't able to locate in the last try/except statement
+            if bool_continue_searching:
+                # The deadline 'p' element contains a "strong" element that just has "Closes: " which isn't needed.
+                try:
+                    text_deadline_temp = list_item.find_element(By.CLASS_NAME, "closes")
+                    text_deadline_temp2 = text_deadline_temp.find_element(By.TAG_NAME, "strong").text
+                    text_deadline_temp = text_deadline_temp.text.replace(text_deadline_temp2, "").strip()
+                except NoSuchElementException:
+                    text_deadline_temp = f"{str_prefix_err} N/A"
+                # The location 'p' element contains a "strong" element that just has "Location: " which isn't needed.
+                try:
+                    text_location_temp = list_item.find_element(By.CLASS_NAME, "location")
+                    text_location_temp2 = text_location_temp.find_element(By.TAG_NAME, "strong").text
+                    text_location_temp = text_location_temp.text.replace(text_location_temp2, "").strip()
+                except NoSuchElementException:
+                    text_location_temp = f"{str_prefix_err} N/A"
+                # The date posted 'p' element contains a "strong" element that just has "Posted: " which isn't needed.
+                try:
+                    text_posted_temp = list_item.find_element(By.CLASS_NAME, "hit_posted_on")
+                    text_posted_temp2 = text_posted_temp.find_element(By.TAG_NAME, "strong").text
+                    text_posted_temp = text_posted_temp.text.replace(text_posted_temp2, "").strip()
+                except NoSuchElementException:
+                    text_posted_temp = f"{str_prefix_err} N/A"
+                arr_postings.append({
+                    'title': list_item.find_element(By.XPATH, ".//article/a/div[2]/h4").text, # TODO
+                    'url': list_item.find_element(By.XPATH, ".//article/a").get_attribute("href"),
+                    'organization': f"{str_prefix_err} N/A", # TODO
+                    'city': text_location_temp,
+                    'type': f"{str_prefix_err} N/A", # TODO: Part time or full time
+                    'deadline': text_deadline_temp, # Format: "Sep 01, 2023"
+                    'date': text_posted_temp, # Format: "Sep 01, 2023"
+                    'description': f"{str_prefix_err} N/A", # To be filled if the entry doesn't exist in the RSS file,
+                    'guid': f"{str_prefix_err} N/A" # Used to prevent saving duplicates in RSS file
+                })
+                arr_postings[-1]['guid'] = re.sub("^\w+", "", arr_postings[-1]['title']+arr_postings[-1]['date']+arr_postings[-1]['url'])
+                # print("="*30)
+                # print(" "*4 + f"Title: {arr_postings[-1]['title']}")
+                # print(" "*4 + f"URL: {arr_postings[-1]['url']}")
+                # # print(" "*4 + f"Company: {arr_postings[-1]['organization']}")
+                # print(" "*4 + f"Location: {arr_postings[-1]['city']}")
+                # # print(" "*4 + f"PT/FT: {arr_postings[-1]['type']}")
+                # print(" "*4 + f"Deadline: {arr_postings[-1]['deadline']}")
+                # print(" "*4 + f"Posted: {arr_postings[-1]['date']}")
+                # # print(" "*4 + f"Description: {arr_postings[-1]['description']}")
+                print(f"GUID: {arr_postings[-1]['guid']}")
+    # From this point onwards: Make the RSS posts of the job listings it was able to get
 
     lines_new = [] # All new lines will be put here before going into the RSS file
-    bool_keep_getting_new_posts = True
-    for post_num in range(len(arr_postings)):
-        posting = arr_postings[post_num]
+    bool_is_post_not_in_file = True 
+    for post_num, posting in enumerate(arr_postings):
         # Check if the current post is already in the RSS file
         with open(RSS_FOLDER + f"{RSS_FILE_NAME}") as myfile:
             if posting['guid'] in myfile.read():
-                bool_keep_getting_new_posts = False
+                bool_is_post_not_in_file = False # Post is already in RSS file, do not add
         # print(bool(is_in_list(posting['guid'], lines)))
-        if bool_keep_getting_new_posts:
+        if bool_is_post_not_in_file:
             # If the URL is not in the list, add it. 
             int_new_postings += 1
-            driver.get(posting['url'])
+            driver.get(posting['url']) # Get the description (here because we only want to do new posts because it costs time)
             # adElement = driver.find_element(By.CLASS_NAME, 'posting-details').get_attribute('innerHTML')
-            adText = driver.find_element(By.CLASS_NAME, 'posting-details').text
-            adText = adText.replace("Back to the Job Board", "")
-            adText = adText.replace("LinkedIn Tweet Facebook Email", "")
-            adText = adText.replace("\n", "\n\n")
-            # adtext = adText[adText.index("LinkedIn Tweet Facebook Email"):]
-            # adText = adText.replace("\n\n\n", "\n")
-            adText = adText.strip()
-            # adText = f"Position Type: {posting['type']}\nApplication Deadline: {posting['deadline']}\nCity: {posting['city']}\n\n" + adText
-            adText = adText.replace("&", "&amp;") # Must be before intentional additions of "&" symbols
-            adText = "&lt;p&gt;" + adText # Start the first "<p>" element
-            adText = adText.replace("&#13;", "")
-            adText = adText.replace("'", "&apos;")
-            adText = adText.replace('"', "&quot;")
-            adText = adText.replace("<", "&lt;")
-            adText = adText.replace(">", "&gt;")
-            adText = adText.replace("\n", "&lt;/p&gt; &lt;p&gt;") # "</p> <p>"
-            adText = adText + "&lt;/p&gt;" # End the last "</p>" element
-            arr_postings[post_num]['description'] = adText # Must be set to arr_postings[post_num]['description'], not posting['description']
+            ad_description_temp = driver.find_element(By.CLASS_NAME, 'single_job_listing').text
+            print(ad_description_temp)
+            # ad_description_temp = ad_description_temp.replace("Back to the Job Board", "")
+            # ad_description_temp = ad_description_temp.replace("LinkedIn Tweet Facebook Email", "")
+            # ad_description_temp = ad_description_temp.replace("\n", "\n\n")
+            # # ad_description_temp = ad_description_temp[ad_description_temp.index("LinkedIn Tweet Facebook Email"):]
+            # # ad_description_temp = ad_description_temp.replace("\n\n\n", "\n")
+            # ad_description_temp = ad_description_temp.strip()
+            # # ad_description_temp = f"Position Type: {posting['type']}\nApplication Deadline: {posting['deadline']}\nCity: {posting['city']}\n\n" + ad_description_temp
+            # ad_description_temp = ad_description_temp.replace("&", "&amp;") # Must be before intentional additions of "&" symbols
+            # ad_description_temp = "&lt;p&gt;" + ad_description_temp # Start the first "<p>" element
+            # ad_description_temp = ad_description_temp.replace("&#13;", "")
+            # ad_description_temp = ad_description_temp.replace("'", "&apos;")
+            # ad_description_temp = ad_description_temp.replace('"', "&quot;")
+            # ad_description_temp = ad_description_temp.replace("<", "&lt;")
+            # ad_description_temp = ad_description_temp.replace(">", "&gt;")
+            # ad_description_temp = ad_description_temp.replace("\n", "&lt;/p&gt; &lt;p&gt;") # "</p> <p>"
+            # ad_description_temp = ad_description_temp + "&lt;/p&gt;" # End the last "</p>" element
+            arr_postings[post_num]['description'] = ad_description_temp # Must be set to arr_postings[post_num]['description'], not posting['description']
             # Convert to RSS/XML Format
             date = parser.parse(posting['date'])
             posting['date'] = date.isoformat()
@@ -190,7 +248,8 @@ def main():
             lines_new.append(f"<name>{posting['organization']}</name>")
             lines_new.append(f"</author>")
             lines_new.append(f"<content type=\"html\">")
-            lines_new.append(posting['description'].replace("\n", "<br>")) # Adding HTML description to RSS
+            # lines_new.append(posting['description'].replace("\n", "<br>")) # Adding HTML description to RSS
+            lines_new.append(posting['description']) # Adding HTML description to RSS
             lines_new.append(f"</content>")
             lines_new.append(f"<guid>{posting['guid']}</guid>")
             lines_new.append(f"</entry>") # End of RSS post
