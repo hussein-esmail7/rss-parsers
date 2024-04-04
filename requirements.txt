@@ -3,6 +3,7 @@ logging
 lxml
 operator
 pyperclip
+python-dateutil
 requests
 selenium
 urllib
