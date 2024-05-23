@@ -6,11 +6,15 @@ A collection of Python scripts that converts pages to RSS.
     - [Why does this help?](#Why-does-this-help)
 - [List of Files](#list-of-files)
 - [Installation](#installation)
+- [to_rss.py](#to_rss.py)
 - [Usage (per program)](#usage)
 	- [rss_html.py](#rss_html.py)
+  - [rss_pact.py](#rss_pact.py)
 	- [rss_reddit_imgdl.py](#rss_reddit_imgdl.py)
+  - [rss_tapa.py](#rss_tapa.py)
 	- [rss_tiktok.py](#rss_tiktok.py)
 	- [rss_vsco.py](#rss_vsco.py)
+  - [rss_workinculture.py](#rss_workinculture.py)
 	- [rss_yfile.py](#rss_yfile.py)
 - [Donate](#donate)
 
@@ -56,6 +60,21 @@ cd rss_parsers/
 pip install requirements.txt
 ```
 
+## to_rss.py
+This file is an abstraction that contains the functions to manage RSS files.
+```
+create_rss(path: str, title: str, subtitle: str)
+```
+Creates the RSS file at the given path, and parent folders if needed. If the file exists, do nothing.
+```
+check_post_exists(path: str, url: str, guid: str)
+```
+Returns boolean value. Input the RSS file path, as well as URL and GUID of the post you want to check. If the GUID is given an empty string (i.e. `""`), it uses the URL as a fallback.
+```
+add_to_rss(path: str, title: str, author: str, date: str, url: str, guid: str, body: str)
+```
+Adds post to RSS file. If the post already exists (using `check_post_exists()`), do nothing. 
+
 ## Usage
 
 ### rss_html.py
@@ -67,6 +86,12 @@ When outputting, the program will ask if you want to copy to clipboard, save to
 file, or print to standard output. You can also have multiple output types or
 all of them.
 
+### rss_pact.py
+```
+python3 rss_pact.py
+```
+This program takes no arguments. It generates an RSS feed of the top page of the Professional Association of Canadian Theatres job posting page.
+
 ### rss_reddit_imgdl.py
 ```
 python3 rss_reddit_imgdl.py
@@ -74,6 +99,12 @@ python3 rss_reddit_imgdl.py
 This program takes no arguments, though it will take a urls file, and those
 URLs should be Reddit RSS feeds. If there is no urls file, it will ask you for
 a URL before running.
+
+### rss_tapa.py
+```
+python3 rss_tapa.py
+```
+This program takes no arguments. It generates an RSS feed of the top page of the Toronto Alliance for the Performing Arts job posting page.
 
 ### rss_tiktok.py
 ```
@@ -96,6 +127,12 @@ at the beginning of the file (ex. RSS file location). This program will only
 output to a local RSS feed at the set location (in variable `RSS_FOLDER`). This
 currently does not work on Windows, because I have no Windows machine to test
 it on. Pull requests with a tested version are welcome.
+
+### rss_workinculture.py
+```
+python3 rss_workinculture.py
+```
+This program takes no arguments. It generates an RSS feed of the top page of the Work In Culture job posting page.
 
 ### rss_yfile.py
 ```
