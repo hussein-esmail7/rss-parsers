@@ -62,8 +62,8 @@ def create_rss(path, title, subtitle):
             lines[num] = lines[num].replace("[RSS FEED TITLE]", title)
             lines[num] = lines[num].replace("[RSS DESCRIPTION]", subtitle)
         open(path, 'w').write("\n".join(lines))
-    else:
-        print(f"RSS file already exists: {path}")
+    # else:
+    #     print(f"RSS file already exists: {path}")
 
 
 def __is_in_list(item, list):
