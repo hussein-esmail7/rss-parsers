@@ -22,7 +22,8 @@ paths_exclude = [
     "rss_yfile.py",
     "rss_tiktok.py",
     "rss_scaruffi.py",
-    "rss_workinculture.py"
+    "rss_workinculture.py",
+    "to_rss.py"
 ] # Programs to exclude even if they meet all requirements
 
 # rss_yfile.py: I personally don't use this file anymore

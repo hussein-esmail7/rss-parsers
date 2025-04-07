@@ -93,8 +93,7 @@ def main():
     options = Options()
     options.add_argument("--headless")  # Run in background
     os.environ['WDM_LOG'] = str(logging.NOTSET) # Do not output logs for CDM
-    cdm = ChromeDriverManager()
-    service = Service(cdm.install())
+    service = Service()
     driver = webdriver.Chrome(service=service, options=options)
     if BOOL_PRINTS and len(usernames) > 0:
         # Display the number of profiles the program is going to check

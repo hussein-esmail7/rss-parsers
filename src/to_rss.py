@@ -130,24 +130,24 @@ def add_to_rss(path: str, title: str, author: str, date: str, url: str, guid: st
             '        <author>',
             '            <name>[POST AUTHOR]</name>',
             '        </author>',
-            '        <content type="html">',
+            '        <description><![CDATA[',
             '            [POST BODY]',
-            '        </content>',
+            '        ]]></description>',
             '    </entry>'
         ]
         description = body
         rss_entry_template = rss_entry_template
 
         # Replace strings that need to be replaced:
-        description = description.replace("&", "&amp;") # Must be before intentional additions of "&" symbols
-        description = "&lt;p&gt;" + description # Start the first "<p>" element
-        description = description.replace("&#13;", "")
-        description = description.replace("'", "&apos;")
-        description = description.replace('"', "&quot;")
-        description = description.replace("<", "&lt;")
-        description = description.replace(">", "&gt;")
-        description = description.replace("\n", "&lt;/p&gt; &lt;p&gt;") # "</p> <p>"
-        description = description + "&lt;/p&gt;" # End the last "</p>" element
+        # description = description.replace("&", "&amp;") # Must be before intentional additions of "&" symbols
+        # description = "&lt;p&gt;" + description # Start the first "<p>" element
+        # description = description.replace("&#13;", "")
+        # description = description.replace("'", "&apos;")
+        # description = description.replace('"', "&quot;")
+        # description = description.replace("<", "&lt;")
+        # description = description.replace(">", "&gt;")
+        # description = description.replace("\n", "&lt;/p&gt; &lt;p&gt;") # "</p> <p>"
+        # description = description + "&lt;/p&gt;" # End the last "</p>" element
         
         for num, _ in enumerate(rss_entry_template):
             rss_entry_template[num] = rss_entry_template[num].replace("[POST TITLE]", title)

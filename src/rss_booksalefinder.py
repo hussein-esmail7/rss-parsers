@@ -21,18 +21,16 @@ import json
 import urllib.request # To download template RSS document
 from email.utils import format_datetime # Convert datetime object to RFC822, which RSS 2.0 requires
 
+import to_rss
+
 # ========= VARIABLES ===========
 bool_run_in_background  = True # Hide selenium Chrome window
 bool_output_to_json = False 
-output_directory = os.path.expanduser("~/.config/rss-parsers/Booksalefinder") # Where to put output files
 query_cities = ['Toronto'] # Cities that go into the RSS file
-RSS_FOLDER   = os.path.expanduser("~/.config/rss-parsers/Booksalefinder/")
-RSS_TERM                = "Booksalefinder"
-RSS_POS_INSERT          = "<!-- FEEDS START -->" # Line to insert feed posts
-URL_TEMPLATE_RSS        = "https://raw.githubusercontent.com/hussein-esmail7/templates/master/templaterss2.xml" # Template RSS on my Github that this program relies on
-RSS_FILE_NAME           = "booksalefinder.xml"
-RSS_TITLE               = f"Booksalefinder for {', '.join(query_cities)}"
-RSS_DESCRIPTION         = f"Booksalefinder for {', '.join(query_cities)}"
+rss_title                = "Booksalefinder"
+rss_subtitle = "Booksalefinder.com RSS Feed"
+# RSS_TITLE               = f"Booksalefinder for {', '.join(query_cities)}"
+# RSS_DESCRIPTION         = f"Booksalefinder for {', '.join(query_cities)}"
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -56,14 +54,12 @@ str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
 str_prefix_info_red     = f"[{color_red}INFO{color_end}]\t "
 error_neither_y_n = f"{str_prefix_err} Please type 'yes' or 'no'"
 
-def is_in_list(item, list):
-    # This function searches for a substring within every entry of an array
-    # Useful for finding if a URL is in a text file at all, when every line 
-    # of the file is a string in the array
-    for list_item in list:
-        if item in list_item:
-            return True
-    return False
+def is_internet_connected():
+    try:
+        urllib.request.urlopen('http://google.com')
+        return True
+    except:
+        return False
 
 def erase_blank_lines(list):
     is_str = type(list) is str # How to return variable in the type it was
@@ -78,14 +74,20 @@ def erase_blank_lines(list):
 
 
 def main():
+    path = "~/.config/rss-parsers/Booksalefinder/" # Separate variable for the JSON option
+    rss_path = path + "booksalefinder.xml"
+    color_sponsor = "#ffff99" # Colour of the background element if it's sponsorted (URLs are found a different way if this is true)
     book_sale_entries_dict = [] # Used to turn rows into a dictionary to format into RSS or JSON later
-
+    if not is_internet_connected():
+        print(f"{str_prefix_err}You're not connected to the internet!")
+        sys.exit(1)
     # ==== Get table data from website via Selenium
     url = "https://www.booksalefinder.com/XON.html"
+    
     options = Options()
     if bool_run_in_background:
         options.add_argument("--headless")  # Adds the argument that hides the window
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome(service=Service(), options=options)
     driver.set_window_size(200, 1000) # Window size
     driver.get(url)
     all_tables_element = driver.find_elements(By.XPATH, "/html/body/doctype/table/tbody/tr/td/table/tbody/tr/td/p[3]/table")
@@ -97,12 +99,7 @@ def main():
                 if len(cells) == 2: # If there are cells in this row
                     dict_entry_current = {}
                     dict_entry_current['url'] = "https://www.booksalefinder.com/XON.html#"
-                    try:
-                        # If it is able to find the URL code, put it in the current dict entry
-                        dict_entry_current['url'] = dict_entry_current['url']+ row.find_element(By.XPATH, "./td[1]/a").get_attribute('name')
-                    except NoSuchElementException:
-                        # If no URL found, place an empty string, URL leave as homepage
-                        pass
+                    
                     cell_text = [cell.text.split("\n") for cell in cells]
                     for cell in cell_text:
                         for line in cells:
@@ -113,8 +110,29 @@ def main():
                     dict_entry_current['address'] = '\n'.join(cell_text[0][1:]).strip() # Entire first cell except first line
                     dict_entry_current['dates'] = cell_text[1][0].strip() # Unformatted line because there are so many variations
                     dict_entry_current['description'] = '\n'.join(cell_text[1][1:]).strip() # Entire second cell except first line
+                    try:
+                        # If it is able to find the URL code, put it in the current dict entry
+                        dict_entry_current['url'] = dict_entry_current['url'] + row.find_element(By.XPATH, "./td[1]/a").get_attribute('name')
+                        dict_entry_current['sponsor'] = False
+                        book_sale_entries_dict.append(dict_entry_current)
+                    except NoSuchElementException:
+                        # If no URL found, it's possible it's sponsored
+                        try:
+                            if row.get_attribute('bgcolor') == color_sponsor:
+                                # Sponsored post
+                                dict_entry_current['sponsor'] = True
+                                dict_entry_current['url'] = row.find_element(By.XPATH, "./td[1]/p[1]/a[1]").get_attribute('name')
+                                book_sale_entries_dict.append(dict_entry_current)
+                            else: 
+                                raise Exception()
+                        except:
+                            print(f"{str_prefix_err} No specific URL found! (Table {table_num}, row {row_num})")
+                            print(f"\t{dict_entry_current['city']}")
+                            print(f"\t{dict_entry_current['state']}")
+                            print(f"\t{' '.join(dict_entry_current['address'])}")
+                            print(f"\t{' '.join(dict_entry_current['dates'])}")
                     # URL specific to that entry row (already inserted above)
-                    book_sale_entries_dict.append(dict_entry_current)
+                    
     driver.close() 
     options.extensions.clear() # Clear the options that were set
     
@@ -131,7 +149,7 @@ def main():
     # Write dict to JSON
     if bool_output_to_json:
         now = datetime.datetime.now().strftime("%Y %m %d %H%M%S")
-        json_filename = f"{output_directory}/{now} results.json"
+        json_filename = f"{path}/{now} results.json"
         with open(json_filename, 'w') as fp:
             json.dump(book_sale_entries_dict, fp)  
         print(f"{str_prefix_info} Wrote to {json_filename}")
@@ -144,28 +162,8 @@ def main():
             if city in entry['city']:
                 query_book_sales.append(entry)
     # print(f"{str_prefix_info} {len(query_book_sales)} results for {query_cities}")
-    if not os.path.exists(RSS_FOLDER): # Make dir if it does not exist
-        os.makedirs(RSS_FOLDER)
-    if os.path.exists(RSS_FOLDER + f"{RSS_FILE_NAME}"):
-        # If file exists, read only
-        lines = open(RSS_FOLDER + f"{RSS_FILE_NAME}", 'r').readlines()
-    else:
-        # Make RSS if it does not exist
-        urllib.request.urlretrieve(URL_TEMPLATE_RSS, RSS_FOLDER + f"{RSS_FILE_NAME}")
-        lines = open(RSS_FOLDER + f"{RSS_FILE_NAME}", 'r').readlines()
-        for num, _ in enumerate(lines):
-            # Replace info in template
-            lines[num] = lines[num].replace("[RSS FEED TITLE]", RSS_TITLE)
-            # lines[num] = lines[num].replace("[TERM]", RSS_TERM)
-            lines[num] = lines[num].replace("[RSS DESCRIPTION]", RSS_DESCRIPTION)
-            # TODO: The next 2 lines are temporary to adhere to RSS 2.0 standards
-            lines[num] = lines[num].replace("[LINK TO THIS RSS]", "https://husseinesmail.xyz/rss.xml") 
-            lines[num] = lines[num].replace("[LINK ALTERNATE]", "https://husseinesmail.xyz") 
-        open(RSS_FOLDER + f"{RSS_FILE_NAME}", 'w').writelines(lines)
-    
-    lines = open(RSS_FOLDER + f"{RSS_FILE_NAME}", 'r').readlines()
-    lines_new = [] # Lines to be added to RSS feed
-    int_new_posts = len(query_book_sales)
+    to_rss.create_rss(rss_path, rss_title, rss_subtitle) # Create file if does not exist
+    int_new_posts = 0
     for posting in query_book_sales:
         # Format description for RSS {START}
         description_tmp = erase_blank_lines(posting['dates']).replace(";", ",") + ". "
@@ -175,39 +173,21 @@ def main():
         description_tmp += erase_blank_lines(posting['description']).replace("\n", ". ")
         posting['description'] = description_tmp.strip()
         # Format description for RSS {END}
-        if not is_in_list(posting['url'], lines) and not is_in_list(posting['description'], lines):
+        if not to_rss.check_post_exists(rss_path, posting['url'], posting['url']):
             # Duplicate post prevention. Only if matching URL and Description are already in the file.
             # It's possible that this site reuses URLs, which is why I also want to check for matching descriptions.
             # Toronto Reference Library may always use https://www.booksalefinder.com/XON.html#X5222
             # But the dates in the description would be different
-            post_date = format_datetime(datetime.datetime.now(datetime.timezone.utc), usegmt=True)
-            lines_new.append(f"<item>")
+            date_formatted = format_datetime(datetime.datetime.now(datetime.timezone.utc), usegmt=True)
             address_first_line = posting['address'].split('\n')[0]
-            lines_new.append(f"<title>Book Sale at {address_first_line}, {posting['city']}</title>")
-            lines_new.append(f"<pubDate>{post_date}</pubDate>") # Ex. 2021-07-28T20:57:31Z
-            lines_new.append(f"<link>{posting['url']}</link>") # Original RSS uses entry.links[0]['href']. .id is neater, and title doesn't need to be in link
-            # Adding author of post
-            lines_new.append(f"<author>Booksalefinder</author>")
-            # <category term="VSCO" label="VSCO - @veronicaapereiraa"/>
-            lines_new.append(f"<category>Book sale at {address_first_line}</category>")
-            lines_new.append(f"<guid>{posting['url']}</guid>") # GUID: Unique identifier
-            posting['dates'] = posting['dates'].replace(";", ",")
-            lines_new.append("<description>" + posting['description'] + "</description>")
-            lines_new.append(f"</item>") # End of RSS post
-        else:
-            int_new_posts =- 1
-            # print(f"{str_prefix_warn} Did not add {posting['url']} - already present")
-            # if not is_in_list(posting['url'], lines) and is_in_list(posting['description'], lines):
-    # Write new lines to RSS file
+            title = f"Book Sale at {address_first_line}, {posting['city']}</title>"
+            if posting['sponsor'] == True:
+                title = "[Sponsor] " + title
+            to_rss.add_to_rss(rss_path, title, author="Booksalefinder", date=date_formatted, url=posting['url'], guid=posting['url'], body=posting['description'])
+            int_new_posts += 1
+    
     if int_new_posts > 0:
         print("\t" + str(int_new_posts) + " new posts")
-    lines_new = [line + "\n" for line in lines_new] # Done for formatting
-    # print(''.join(lines_new))
-    rss_delimiter_pos = [line.strip() for line in lines].index(RSS_POS_INSERT) # Find the RSS Delimiter out of the stripped version of the array (each line stripped)
-    lines = lines[:rss_delimiter_pos+1] + lines_new + lines[rss_delimiter_pos+1:] # Join the array at the RSS delimiter position
-    open(RSS_FOLDER + f"{RSS_FILE_NAME}", 'w').writelines(lines) # Replace previous RSS lines
-    # print(f"{str_prefix_info} Wrote to {RSS_FILE_NAME}")
-
     sys.exit()
 
 

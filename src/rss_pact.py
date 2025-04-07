@@ -16,19 +16,49 @@ from selenium.webdriver.chrome.options import Options # Used to add aditional se
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
 import datetime
 import to_rss # Python function file in same directory
+import urllib.request # To check internet connection and download urls
+
 
 # ========= VARIABLES ===========
 bool_run_in_background  = True # Hide selenium Chrome window
 
+# ========= COLOR CODES =========
+color_end               = '\033[0m'
+color_darkgrey          = '\033[90m'
+color_red               = '\033[91m'
+color_green             = '\033[92m'
+color_yellow            = '\033[93m'
+color_blue              = '\033[94m'
+color_pink              = '\033[95m'
+color_cyan              = '\033[96m'
+color_white             = '\033[97m'
+color_grey              = '\033[98m'
+
+# ========= COLORED STRINGS =========
+str_prefix_q            = f"[{color_pink}Q{color_end}]\t "
+str_prefix_y_n          = f"[{color_pink}y/n{color_end}]"
+str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
+str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
+str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
+
+def is_internet_connected():
+    try:
+        urllib.request.urlopen('http://google.com')
+        return True
+    except:
+        return False
+    
 def main():
-    now = datetime.datetime.now().isoformat()
+    if not is_internet_connected():
+        print(f"{str_prefix_err}You're not connected to the internet!")
+        sys.exit(1)
     rss_path = "~/.config/rss-parsers/PACT/pact.xml"
     url = "https://www.pact.ca/artsboard" # URL to look at job posting list for
     to_rss.create_rss(path=rss_path, title="PACT Job Postings", subtitle="Professional Association of Canadian Theatres Job Postings")
     options = Options()
     if bool_run_in_background:
         options.add_argument("--headless")  # Adds the argument that hides the window
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    driver = webdriver.Chrome(service=Service(), options=options)
     driver.set_window_size(200, 1000) # Window size
     driver.get(url)
     elements = driver.find_elements(By.XPATH, "/html/body/main/div[2]/div[1]/div") # The list of job posting elements
