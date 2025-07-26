@@ -34,8 +34,6 @@ pages. Programs in this repository rectify both of these issues.
 ## List of Files
 - [rss_booksalefinder.py](blob/main/rss_booksalefinder.py): TODO -----
 - [rss_citt.py](blob/main/rss_citt.py): TODO -----
-  Intended for my own website, [husseinesmail.xyz](https://husseinesmail.xyz)
-  but can be manipulated to work with other sites.
 - [rss_html.py](blob/main/rss_html.py): Convert a local HTML file to RSS.
   Intended for my own website, [husseinesmail.xyz](https://husseinesmail.xyz)
   but can be manipulated to work with other sites.
