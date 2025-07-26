@@ -32,20 +32,27 @@ providers don't provide as much content in their feeds as they do in their web
 pages. Programs in this repository rectify both of these issues.
 
 ## List of Files
+- [rss_booksalefinder.py](blob/main/rss_booksalefinder.py): TODO -----
+- [rss_citt.py](blob/main/rss_citt.py): TODO -----
+  Intended for my own website, [husseinesmail.xyz](https://husseinesmail.xyz)
+  but can be manipulated to work with other sites.
 - [rss_html.py](blob/main/rss_html.py): Convert a local HTML file to RSS.
   Intended for my own website, [husseinesmail.xyz](https://husseinesmail.xyz)
   but can be manipulated to work with other sites.
+- [rss_pact.py](blob/main/rss_pact.py): TODO -----
 - [rss_reddit_imgdl.py](blob/main/rss_reddit_imgdl.py): Takes an RSS feed from
   Reddit and downloads all images from the https://i.redd.it/ domain so they
   can be viewed from [newsboat](https://newsboat.org) offline.
   [r/unixporn](https://reddit.com/r/unixporn) is a good example of how this
   program can be used. *Note: I haven't been using this one recently.*
+- [rss_tapa.py](blob/main/rss_tapa.py): TODO -----
 - [rss_tiktok.py](blob/main/rss_tiktok.py): This uses Selenium to scrape the
   top posts of a person's TikTok profile and appends them to a RSS feed.
 - [rss_vsco.py](blob/main/rss_vsco.py): Gets post URLs along with URLs to the
   images directly of a VSCO page using just the username in the `urls` file.
   This looks at the first loaded posts on a page, so it won't load all of them,
   just the most recent ones (usually the top 45).
+- [rss_workinculture.py](blob/main/rss_workinculture.py): TODO -----
 - [rss_yfile.py](blob/main/rss_yfile.py): YFile newsletter at York University.
   They do have an RSS feed, but their RSS posts are only a fraction of what is
   displayed on each YFile article page. That annoyed me, so I thought to myself
@@ -73,7 +80,7 @@ Returns boolean value. Input the RSS file path, as well as URL and GUID of the p
 ```
 add_to_rss(path: str, title: str, author: str, date: str, url: str, guid: str, body: str)
 ```
-Adds post to RSS file. If the post already exists (using `check_post_exists()`), do nothing. 
+Adds post to RSS file. If the post already exists (using `check_post_exists()`), do nothing.
 
 ## Usage
 
