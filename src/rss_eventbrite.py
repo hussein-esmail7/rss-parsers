@@ -4,6 +4,9 @@ Hussein Esmail
 Created: 2023 08 04 (Mon)
 Updated: 2023 08 04 (Mon)
 Description: RSS Parser for Eventbrite
+
+source ~/.venv/bin/activate
+
 '''
 
 import os
