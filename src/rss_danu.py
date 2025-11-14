@@ -78,7 +78,11 @@ def main():
         # Get start time and convert to datetime format
         month = time.strptime('Feb','%b').tm_mon
         event_time_start = event_times[0].text # Ex. "9:00 pm"
-        event_time_start = datetime.datetime(datetime.datetime.now().year, month, day, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0)
+        yr = datetime.datetime.now().year
+        mo = time.strptime(event_date.split(' ')[0],'%b').tm_mon
+        da = int(event_date.split(' ')[-1])
+        hr = int(event_time_start.split(":").strip())
+        event_time_start = datetime.datetime(year=yr, month=mo, day=da, hour=hr, minute=0, tzinfo=datetime.timezone.utc-5)
         event_time_end = event_times[-1].text
 
         parsed_items.append({
