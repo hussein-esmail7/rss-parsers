@@ -16,11 +16,14 @@ import time
 from selenium import webdriver
 from selenium.common.exceptions import *
 import logging
+import json
 from webdriver_manager.chrome import ChromeDriverManager
 # from selenium.webdriver.support.ui import Select  # Used to select from drop down menus
 from selenium.webdriver.chrome.service import Service # Used to set Chrome location
 from selenium.webdriver.chrome.options import Options # Used to add aditional settings (ex. run in background)
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 # from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
 import urllib.request # To check internet connection and download urls
 import datetime
@@ -125,15 +128,20 @@ def main():
     e_events_future = c
     num_events_future_found = len(e_events_future)
     while num_events_future_found < num_events_future_real:
-        if driver.find_elements(By.CLASS_NAME, "organizer-profile__show-more"):
-            btn_show_more = driver.find_elements(By.CLASS_NAME, "organizer-profile__show-more")[0].find_element(By.XPATH, "button").click()
-            time.sleep(2)
-        # Getting the element list of future events
-        a = driver.find_element(By.CLASS_NAME, "eds-tabs__content--upcoming-events")
-        b = a.find_element(By.XPATH, "div/div[2]")
-        c = b.find_elements(By.CLASS_NAME, "eds-l-pad-vert-2")
-        e_events_future = c
-        num_events_future_found = len(e_events_future)
+        try:
+            btn_show_more = driver.find_elements(By.CLASS_NAME, "organizer-profile__show-more")
+            if len(btn_show_more) != 0:
+                btn_show_more[0].find_element(By.XPATH, "button").click()
+                time.sleep(2)
+            # Getting the element list of future events
+            a = driver.find_element(By.CLASS_NAME, "eds-tabs__content--upcoming-events")
+            b = a.find_element(By.XPATH, "div/div[2]")
+            c = b.find_elements(By.CLASS_NAME, "eds-l-pad-vert-2")
+            e_events_future = c
+            num_events_future_found = len(e_events_future)
+            print(f"Current number of events: {num_events_future_found}")
+        except:
+            break
     print(f"Found future events: {num_events_future_found}")
     events_future = []
     for event_future in e_events_future:
@@ -156,7 +164,16 @@ def main():
         # In this loop, get address of each event, as well as all the times if
         # the header previously had a "+" in the string
         driver.get(event['url'])
+        print(f"Went to {event['url']}")
         time.sleep(0.5)
+
+        # print("\tStarting to wait")
+        # dummy = input("> ") # --------------------------
+        wait = WebDriverWait(driver, 10)
+        loc_full = wait.until(
+            EC.presence_of_element_located((By.CLASS_NAME, "location-info__address"))
+        )
+        # print("\tDone waiting")
         loc_full = driver.find_element(By.CLASS_NAME, "location-info__address").text
         loc_name = driver.find_element(By.CLASS_NAME, "location-info__address-text").text
         loc_addr = loc_full.replace(loc_name, "").strip().split('\n')[0]
@@ -182,6 +199,14 @@ def main():
     # TODO: Verify the "+ 2 more" (+etc) entries are deleted after each individual date entry is added
     # TODO: Convert date formats to ISO so it can be sorted by that later (before sending to RSS so it's in order beforehand)
     # TODO: Finish commenting (as of 2025 08 04 12:40pm)
+
+    # Save as JSON
+    # Construct filename
+    timestamp = datetime.datetime.now().isoformat(timespec='seconds').replace(":", "-")
+    filename = f"data_{timestamp} Eventbrite.json"
+    # Export dictionary as JSON file
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(events_future, f, indent=4, ensure_ascii=False)
 
     if bool_prints: # Print all data
         for event in events_future:

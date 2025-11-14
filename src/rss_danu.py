@@ -14,6 +14,7 @@ import time
 import sys # To exit the program
 from bs4 import BeautifulSoup, Tag, NavigableString
 import requests
+import datetime
 from selenium import webdriver
 from selenium.common.exceptions import *
 from webdriver_manager.chrome import ChromeDriverManager
@@ -22,6 +23,7 @@ from selenium.webdriver.chrome.service import Service # Used to set Chrome locat
 from selenium.webdriver.chrome.options import Options # Used to add aditional settings (ex. run in background)
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
 # from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
+import to_rss
 
 # ========= VARIABLES ===========
 bool_run_in_background  = True
@@ -66,11 +68,38 @@ def main():
     if bool_prints:
         print(f"{str_prefix_info} # of event list items: {len(events_list)}")
 
+    parsed_items = []
     for event in events_list:
         event_url = event.find_element(By.TAG_NAME, 'a').get_attribute('href')
         event_title = event.find_element(By.CLASS_NAME, 'event-card-title').text
-        event_date = event.find_element(By.CLASS_NAME, 'event-card-title').text
+        event_timeinfo = event.find_element(By.CLASS_NAME, 'event-card-datetime')
+        event_date = event_timeinfo.find_element(By.CLASS_NAME, 'event-date').text
+        event_times = event_timeinfo.find_elements(By.CLASS_NAME, 'event-time')
+        # Get start time and convert to datetime format
+        month = time.strptime('Feb','%b').tm_mon
+        event_time_start = event_times[0].text # Ex. "9:00 pm"
+        event_time_start = datetime.datetime(datetime.datetime.now().year, month, day, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0)
+        event_time_end = event_times[-1].text
 
+        parsed_items.append({
+            'url': event_url,
+            'title': event_title,
+            'date': event_date, # 'MMM DD' format
+            'time_start': event_time_start,
+            'time_end': event_time_end,
+            'description': ""
+            })
+
+    # Print raw data the website got so far before going into each URL to get the description
+    if bool_prints:
+        for item in parsed_items:
+            print(f"{str_prefix_info} {item['title']}")
+            print(f"\t{item['date']} at {item['time_start']} to {item['time_end']}")
+            print(f"\tSee {item['url']}")
+    
+    # Convert dates to datetime format
+
+    print("\n")
     dummy = input("> ")
     # soup = BeautifulSoup(driver.page_source, 'lxml')
     # d = soup.find('div', attrs= {'class': 'event-collection-item'})
