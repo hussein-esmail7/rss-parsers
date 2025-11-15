@@ -12,13 +12,15 @@ Description: [DESCRIPTION]
 import os
 import time
 import sys # To exit the program
-from bs4 import BeautifulSoup, Tag, NavigableString
-import requests
+# from bs4 import BeautifulSoup, Tag, NavigableString
+# import requests
 import datetime
+import json
 from selenium import webdriver
 from selenium.common.exceptions import *
 from webdriver_manager.chrome import ChromeDriverManager
 # from selenium.webdriver.support.ui import Select  # Used to select from drop down menus
+from dateutil.relativedelta import relativedelta
 from selenium.webdriver.chrome.service import Service # Used to set Chrome location
 from selenium.webdriver.chrome.options import Options # Used to add aditional settings (ex. run in background)
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
@@ -28,6 +30,7 @@ import to_rss
 # ========= VARIABLES ===========
 bool_run_in_background  = True
 bool_prints             = True
+bool_prints_bulk        = False
 target_site             = "https://www.danusocialhouse.ca/events"
 
 # ========= COLOR CODES =========
@@ -75,34 +78,91 @@ def main():
         event_timeinfo = event.find_element(By.CLASS_NAME, 'event-card-datetime')
         event_date = event_timeinfo.find_element(By.CLASS_NAME, 'event-date').text
         event_times = event_timeinfo.find_elements(By.CLASS_NAME, 'event-time')
-        # Get start time and convert to datetime format
-        month = time.strptime('Feb','%b').tm_mon
-        event_time_start = event_times[0].text # Ex. "9:00 pm"
-        yr = datetime.datetime.now().year
-        mo = time.strptime(event_date.split(' ')[0],'%b').tm_mon
-        da = int(event_date.split(' ')[-1])
-        hr = int(event_time_start.split(":").strip())
-        event_time_start = datetime.datetime(year=yr, month=mo, day=da, hour=hr, minute=0, tzinfo=datetime.timezone.utc-5)
-        event_time_end = event_times[-1].text
 
+        # Get start time and convert to datetime format
+        event_time_start = event_times[0].text # Ex. "7:00 pm"
+        yr = datetime.datetime.now().year # year
+        mo = time.strptime(event_date.split(' ')[0],'%b').tm_mon # month as number
+        da = int(event_date.split(' ')[-1]) # day as number
+        hr = int(event_time_start.split(":")[0].strip()) # hour as number - All characters up to ":"
+        mi = int(event_time_start.split(":")[1][0:1].strip()) # minute as number - First 2 characters after ":"
+        if "pm" in event_time_start.lower(): # hour to 24hr format
+            hr += 12
+        # TODO: Set Toronto time Zone
+        event_time_start = datetime.datetime(year=yr, month=mo, day=da, hour=hr, minute=mi, tzinfo=None)
+        
+
+
+        # Get start end and convert to datetime format
+        event_time_end = event_times[-1].text # Ex. "10:00 pm"
+        # Hour and minute are the only things that change
+        hr = int(event_time_end.split(":")[0].strip()) # hour as number - All characters up to ":"
+        mi = int(event_time_end.split(":")[1][0:1].strip()) # minute as number - First 2 characters after ":"
+        if "pm" in event_time_end.lower(): # hour to 24hr format
+            hr += 12
+        # TODO: Set Toronto time Zone
+        event_time_end = datetime.datetime(year=yr, month=mo, day=da, hour=hr, minute=mi, tzinfo=None)
+        
+        if event_time_start > event_time_end: 
+            # If the end time is before the start time, it is likely the event ends after midnight
+            # Move the end time to the next day
+            event_time_end += relativedelta(days=1)
+        
+        # If the current date is newer than the date in question by more than 3 months, move it to the next year
+        # 3 months in case an event just happened
+        longago = datetime.datetime.now() - relativedelta(months=3)
+        if event_time_start < longago:
+            event_time_start = event_time_start + relativedelta(years=1)
+            event_time_end = event_time_end + relativedelta(years=1)
+        # diff = datetime.datetime.now() - event_time_start
+        # print(diff)
+        # if event_time_end < datetime.datetime.today(): # If the date (month + day) has passed, move it to next year
+        #     event_time_end = event_time_end + relativedelta(years=1)
+
+        
         parsed_items.append({
             'url': event_url,
             'title': event_title,
             'date': event_date, # 'MMM DD' format
             'time_start': event_time_start,
             'time_end': event_time_end,
-            'description': ""
+            'description': "",
+            'uuid': event_time_start.isoformat() + " " + event_title
             })
-
-    # Print raw data the website got so far before going into each URL to get the description
+        
     if bool_prints:
+        print(f"{str_prefix_info} Found {len(parsed_items)} items")
+
+    for item in parsed_items:
+        # Get description of each post
+        driver.get(item['url'])
+        time.sleep(0.3)
+        item['description'] = driver.find_element(By.CLASS_NAME, "event-paragraph-rich-text").text
+    
+    # Save as JSON
+    # Construct filename
+    timestamp = datetime.datetime.now().isoformat(timespec='seconds').replace(":", "-")
+    filename = f"data_{timestamp}_danu.json"
+    # Convert all datetime objects to str (ISO format), or else json parser crashes
+    for item in parsed_items:
+        item['time_start'] = item['time_start'].isoformat()
+        item['time_end'] = item['time_end'].isoformat()
+    # Export dictionary as JSON file
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(parsed_items, f, indent=4, ensure_ascii=False)
+    if bool_prints:
+        print(f"{str_prefix_info} Saved JSON file {filename}")
+
+    # Print raw data 
+    if bool_prints_bulk:
         for item in parsed_items:
             print(f"{str_prefix_info} {item['title']}")
             print(f"\t{item['date']} at {item['time_start']} to {item['time_end']}")
+            print(f"\t{item['time_start']} to {item['time_end']}")
+            print(f"\t\t{item['description']}")
             print(f"\tSee {item['url']}")
-    
-    # Convert dates to datetime format
 
+    
     print("\n")
     dummy = input("> ")
     # soup = BeautifulSoup(driver.page_source, 'lxml')
