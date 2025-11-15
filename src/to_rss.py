@@ -100,7 +100,7 @@ def check_post_exists(path: str, url: str, guid: str) -> bool:
     return False
 
 
-def add_to_rss(path: str, title: str, author: str, date: str, url: str, guid: str, body: str):
+def add_to_rss(path: str, title: str, author: str, date: str, url: str, guid: str, body: str, use_cdata: bool):
     # NOTE: Date string must be in ISO 8601 format
     path = os.path.expanduser(path)
     RSS_POS_INSERT = "<!-- FEEDS START -->" # Line to insert feed posts
@@ -120,21 +120,38 @@ def add_to_rss(path: str, title: str, author: str, date: str, url: str, guid: st
         sys.exit(1) # This line exits the program later on so it doesn't overwrite the file
     # If the post is not in the file, continue adding the current post
     if not check_post_exists(path=path, url=url, guid=guid):
-        rss_entry_template = [
-            '    <entry>',
-            '        <title>[POST TITLE]</title>',
-            '        <published>[POST DATE]</published>',
-            '        <updated>[POST DATE]</updated>',
-            '        <link href="[POST URL]"/>',
-            '        <guid>[POST GUID]</guid>',
-            '        <author>',
-            '            <name>[POST AUTHOR]</name>',
-            '        </author>',
-            '        <description><![CDATA[',
-            '            [POST BODY]',
-            '        ]]></description>',
-            '    </entry>'
-        ]
+        if use_cdata:
+            rss_entry_template = [
+                '    <entry>',
+                '        <title>[POST TITLE]</title>',
+                '        <published>[POST DATE]</published>',
+                '        <updated>[POST DATE]</updated>',
+                '        <link href="[POST URL]"/>',
+                '        <guid>[POST GUID]</guid>',
+                '        <author>',
+                '            <name>[POST AUTHOR]</name>',
+                '        </author>',
+                '        <description><![CDATA[',
+                '            [POST BODY]',
+                '        ]]></description>',
+                '    </entry>'
+            ]
+        else:
+            rss_entry_template = [
+                '    <entry>',
+                '        <title>[POST TITLE]</title>',
+                '        <published>[POST DATE]</published>',
+                '        <updated>[POST DATE]</updated>',
+                '        <link href="[POST URL]"/>',
+                '        <guid>[POST GUID]</guid>',
+                '        <author>',
+                '            <name>[POST AUTHOR]</name>',
+                '        </author>',
+                '        <description>',
+                '            [POST BODY]',
+                '        </description>',
+                '    </entry>'
+            ]
         description = body
         rss_entry_template = rss_entry_template
 

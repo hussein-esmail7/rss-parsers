@@ -16,6 +16,7 @@ import sys # To exit the program
 # import requests
 import datetime
 import json
+import logging
 from selenium import webdriver
 from selenium.common.exceptions import *
 from webdriver_manager.chrome import ChromeDriverManager
@@ -25,13 +26,17 @@ from selenium.webdriver.chrome.service import Service # Used to set Chrome locat
 from selenium.webdriver.chrome.options import Options # Used to add aditional settings (ex. run in background)
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
 # from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
-import to_rss
+import to_rss # Python function file in same directory
 
 # ========= VARIABLES ===========
 bool_run_in_background  = True
 bool_prints             = True
 bool_prints_bulk        = False
+author = "Danu Social House"
 target_site             = "https://www.danusocialhouse.ca/events"
+RSS_TITLE = "Danu Social House"
+RSS_DESCRIPTION = "Unofficial feed hosted and maintained (when I can) by Hussein Esmail"
+desc_footer = "\n\nDanu Social House\n(416) 535-4144\nevents@danu.house\n\n1237 Queen St W\nToronto, ON M6K 1L4"
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -63,9 +68,17 @@ def main():
     # driver = webdriver.Chrome(service=service, options=options)
     # driver = webdriver.Chrome(options=options)
     # driver.set_window_size(200, 1000) # Window size
+    rss_path = "~/.config/rss-parsers/danusocialhouse/danusocialhouse.xml"
+    int_new_postings = 0
+    options = Options()
+    if bool_run_in_background:
+        options.add_argument("--headless")  # Run in background
+    os.environ['WDM_LOG'] = str(logging.NOTSET) # Do not output logs for CDM
+    service = Service()
     driver = webdriver.Chrome()
     driver.get(target_site)
     driver.implicitly_wait(0.5)
+    to_rss.create_rss(path=rss_path, title=RSS_TITLE, subtitle=RSS_DESCRIPTION)
 
     events_list = driver.find_elements(By.CLASS_NAME, 'event-collection-item')
     if bool_prints:
@@ -90,8 +103,6 @@ def main():
             hr += 12
         # TODO: Set Toronto time Zone
         event_time_start = datetime.datetime(year=yr, month=mo, day=da, hour=hr, minute=mi, tzinfo=None)
-        
-
 
         # Get start end and convert to datetime format
         event_time_end = event_times[-1].text # Ex. "10:00 pm"
@@ -114,16 +125,10 @@ def main():
         if event_time_start < longago:
             event_time_start = event_time_start + relativedelta(years=1)
             event_time_end = event_time_end + relativedelta(years=1)
-        # diff = datetime.datetime.now() - event_time_start
-        # print(diff)
-        # if event_time_end < datetime.datetime.today(): # If the date (month + day) has passed, move it to next year
-        #     event_time_end = event_time_end + relativedelta(years=1)
 
-        
         parsed_items.append({
             'url': event_url,
             'title': event_title,
-            'date': event_date, # 'MMM DD' format
             'time_start': event_time_start,
             'time_end': event_time_end,
             'description': "",
@@ -134,11 +139,21 @@ def main():
         print(f"{str_prefix_info} Found {len(parsed_items)} items")
 
     for item in parsed_items:
-        # Get description of each post
+        # Create description of each post
         driver.get(item['url'])
         time.sleep(0.3)
-        item['description'] = driver.find_element(By.CLASS_NAME, "event-paragraph-rich-text").text
-    
+
+        # print(str(driver.find_element(By.CLASS_NAME, "event-paragraph-rich-text").text))
+        # dummy = input("> ")
+
+        item['description'] =  item['time_start'].strftime("%B %d, %Y %I:%M%p")
+        item['description'] += " to "
+        item['description'] += item['time_end'].strftime("%I:%M%p")
+        item['description'] += "\n\n"
+        item['description'] += driver.find_element(By.CLASS_NAME, "event-paragraph-rich-text").text 
+        item['description'] += desc_footer
+        item['description'] += "\n\n"
+        
     # Save as JSON
     # Construct filename
     timestamp = datetime.datetime.now().isoformat(timespec='seconds').replace(":", "-")
@@ -157,21 +172,29 @@ def main():
     if bool_prints_bulk:
         for item in parsed_items:
             print(f"{str_prefix_info} {item['title']}")
-            print(f"\t{item['date']} at {item['time_start']} to {item['time_end']}")
-            print(f"\t{item['time_start']} to {item['time_end']}")
+            print(f"\t{item['time_start'][:item['time_start'].index('T')]} at {item['time_start'][item['time_start'].index('T'):]} to {item['time_end'][item['time_end'].index('T'):]}")
+            # print(f"\t{item['time_start']} to {item['time_end']}")
             print(f"\t\t{item['description']}")
             print(f"\tSee {item['url']}")
-
     
-    print("\n")
-    dummy = input("> ")
-    # soup = BeautifulSoup(driver.page_source, 'lxml')
-    # d = soup.find('div', attrs= {'class': 'event-collection-item'})
-    # print(d.text.strip())
-
+    # print("\n")
+    # dummy = input("> ")
+    
     # Cleanup
-    driver.close()  # Close the browser
-    # options.extensions.clear() # Clear the options that were set
+    driver.close()  # Close the browser, no longer needed for the rest of the program
+
+    for entry in reversed(parsed_items):
+        if not to_rss.check_post_exists(path=rss_path, url=entry['url'], guid=entry['uuid']):
+            # If the post is not in the list, add it.
+            to_rss.add_to_rss(path=rss_path, title=entry['title'], author=author, date=datetime.datetime.now().isoformat(), url=entry['url'], guid=entry['uuid'], body=entry['description'], use_cdata=False)
+            int_new_postings += 1
+
+    if bool_prints and int_new_postings>0:
+        if int_new_postings == 1:
+            print("\t 1 new posting")
+        else:
+            print(f"\t {int_new_postings} new postings")
+
     sys.exit() # Exit the program
 
 if __name__ == "__main__":
