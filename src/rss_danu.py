@@ -210,20 +210,12 @@ def main():
                 'uuid': element.id,
                 'published': element.published # 'Thu, 05 Sep 2002 00:00:01 GMT' format
             })
-
-            """
-            import feedparser
-d = feedparser.parse('https://feedparser.readthedocs.io/en/latest/examples/rss20.xml')
-
-d.entries[0].published_parsed
-(2002, 9, 5, 0, 0, 1, 3, 248, 0)
-
-            """
-            # print(f"{num} - {element.title}")
             # 0 = most recent
             # 1 = 2nd recent
             # ...
             # -1 = earliest
+    else:
+        
 
     for entry in reversed(parsed_items):
         # Reversed = oldest first since the webpage is newest to oldest, but we want oldest to newest
