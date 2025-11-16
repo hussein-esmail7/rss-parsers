@@ -17,6 +17,7 @@ import sys # To exit the program
 import datetime
 import json
 import logging
+import feedparser # Used to import existing RSS feeds
 from selenium import webdriver
 from selenium.common.exceptions import *
 from webdriver_manager.chrome import ChromeDriverManager
@@ -27,6 +28,7 @@ from selenium.webdriver.chrome.options import Options # Used to add aditional se
 from selenium.webdriver.common.by import By # Used to determine type to search for (normally By.XPATH)
 # from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
 import to_rss # Python function file in same directory
+from feedgen.feed import FeedGenerator
 
 # ========= VARIABLES ===========
 bool_run_in_background  = True
@@ -132,7 +134,8 @@ def main():
             'time_start': event_time_start,
             'time_end': event_time_end,
             'description': "",
-            'uuid': event_time_start.isoformat() + " " + event_title
+            'uuid': event_time_start.isoformat() + " " + event_title,
+            'published': datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT") # 'Thu, 05 Sep 2002 00:00:01 GMT' format
             })
         
     if bool_prints:
@@ -183,11 +186,65 @@ def main():
     # Cleanup
     driver.close()  # Close the browser, no longer needed for the rest of the program
 
+    fg = FeedGenerator()
+    fg.id('https://www.danusocialhouse.ca/events') # TODO: Verify if this is supposed to be the source URL or the URL to the feed itself
+    fg.title(RSS_TITLE)
+    fg.author( {'name':'Hussein Esmail','email':'HusseinEsmailContact@gmail.com'} )
+    fg.link( href='https://www.danusocialhouse.ca/events', rel='alternate')
+    # fg.logo('http://ex.com/logo.jpg')
+    fg.subtitle(RSS_DESCRIPTION)
+    fg.link(href='https://husseinesmail.xyz/rss/danusocialhouse.xml', rel='self') # TODO: Link to self
+    fg.language('en')
+
+    if os.path.exists(rss_path):
+        # If the feed already exists, parse all existing items into the new feed
+        # first so that they carry over and don't get overwritten
+        d = feedparser.parse(rss_path)
+        for element in enumerate(d.entries):
+            parsed_items.append({
+                'url': element.link,
+                'title': element.title,
+                'time_start': event_time_start,
+                'time_end': event_time_end,
+                'description': element.description,
+                'uuid': element.id,
+                'published': element.published # 'Thu, 05 Sep 2002 00:00:01 GMT' format
+            })
+
+            """
+            import feedparser
+d = feedparser.parse('https://feedparser.readthedocs.io/en/latest/examples/rss20.xml')
+
+d.entries[0].published_parsed
+(2002, 9, 5, 0, 0, 1, 3, 248, 0)
+
+            """
+            # print(f"{num} - {element.title}")
+            # 0 = most recent
+            # 1 = 2nd recent
+            # ...
+            # -1 = earliest
+
     for entry in reversed(parsed_items):
-        if not to_rss.check_post_exists(path=rss_path, url=entry['url'], guid=entry['uuid']):
+        # Reversed = oldest first since the webpage is newest to oldest, but we want oldest to newest
+        if not to_rss.check_post_exists_guid(path=rss_path, guid=entry['uuid']):
             # If the post is not in the list, add it.
             to_rss.add_to_rss(path=rss_path, title=entry['title'], author=author, date=datetime.datetime.now().isoformat(), url=entry['url'], guid=entry['uuid'], body=entry['description'], use_cdata=False)
+            # Source - https://stackoverflow.com/a/77706593
+            fe = fg.add_entry()
+            fe.id(entry['uuid'])
+            fe.title(entry['title'])
+            fe.link(href=entry['url'])
+            fe.description(entry['description'])
+            fe.published(entry['published'])
             int_new_postings += 1
+
+    rssfeed = fg.rss_str(pretty=True) # Get the RSS feed as string
+    fg.rss_file(rss_path) # Write the RSS feed to a file
+
+    if bool_prints:
+        print(rssfeed)
+        print("\n\n")
 
     if bool_prints and int_new_postings>0:
         if int_new_postings == 1:

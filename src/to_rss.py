@@ -99,6 +99,25 @@ def check_post_exists(path: str, url: str, guid: str) -> bool:
             return True
     return False
 
+def check_post_exists_guid(path: str, guid: str) -> bool:
+    # True: Post exists in RSS file already
+    # False: Post does not exist in RSS file
+    path = os.path.expanduser(path)
+    if not path.endswith(".xml"):
+        raise ValueError("[\033[91mERROR\033[0m] Path does not end with '.xml'!")
+        sys.exit(1)
+    if os.path.exists(path): # If file exists, read only
+        lines = open(path, 'r').readlines()
+    else: # If no file exists, raise error and exit function
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
+        sys.exit(1)
+    # Check if this post is already in the RSS file
+    # Use GUID at first but not every RSS page may use GUIDs
+    # If no GUID provided (i.e. provided ""), use the URL as the identifier
+    if len(guid) != 0:
+        if __is_in_list(f"<guid>{guid}</guid>", lines):
+            return True
+    return False
 
 def add_to_rss(path: str, title: str, author: str, date: str, url: str, guid: str, body: str, use_cdata: bool):
     # NOTE: Date string must be in ISO 8601 format
