@@ -17,6 +17,7 @@ import sys # To exit the program
 import datetime
 import json
 import logging
+import pytz # Requires 'pytz' library for specific timezones
 import feedparser # Used to import existing RSS feeds
 from selenium import webdriver
 from selenium.common.exceptions import *
@@ -77,7 +78,7 @@ def main():
         options.add_argument("--headless")  # Run in background
     os.environ['WDM_LOG'] = str(logging.NOTSET) # Do not output logs for CDM
     service = Service()
-    driver = webdriver.Chrome()
+    driver = webdriver.Chrome(options=options)
     driver.get(target_site)
     driver.implicitly_wait(0.5)
     to_rss.create_rss(path=rss_path, title=RSS_TITLE, subtitle=RSS_DESCRIPTION)
@@ -128,6 +129,7 @@ def main():
             event_time_start = event_time_start + relativedelta(years=1)
             event_time_end = event_time_end + relativedelta(years=1)
 
+        now = datetime.datetime.now(pytz.timezone('America/New_York'))
         parsed_items.append({
             'url': event_url,
             'title': event_title,
@@ -135,7 +137,8 @@ def main():
             'time_end': event_time_end,
             'description': "",
             'uuid': event_time_start.isoformat() + " " + event_title,
-            'published': datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT") # 'Thu, 05 Sep 2002 00:00:01 GMT' format
+            # 'published': datetime.datetime.now().strftime("%a, %d %b %Y %H:%M:%S GMT") # 'Thu, 05 Sep 2002 00:00:01 GMT' format
+            'published': datetime.datetime.now(datetime.timezone.utc).isoformat()
             })
         
     if bool_prints:
@@ -196,11 +199,12 @@ def main():
     fg.link(href='https://husseinesmail.xyz/rss/danusocialhouse.xml', rel='self') # TODO: Link to self
     fg.language('en')
 
+    rss_path = os.path.expanduser(rss_path) # Get the full path as the os library does not work well with "~"
     if os.path.exists(rss_path):
         # If the feed already exists, parse all existing items into the new feed
         # first so that they carry over and don't get overwritten
         d = feedparser.parse(rss_path)
-        for element in enumerate(d.entries):
+        for element in d.entries:
             parsed_items.append({
                 'url': element.link,
                 'title': element.title,
@@ -215,14 +219,19 @@ def main():
             # ...
             # -1 = earliest
     else:
+        # If path does not exist
+        # Create RSS file
+        # No need to get existing results as the file would be empty
+        to_rss.create_rss(path=rss_path, title=RSS_TITLE, subtitle=RSS_DESCRIPTION)
         
 
     for entry in reversed(parsed_items):
         # Reversed = oldest first since the webpage is newest to oldest, but we want oldest to newest
         if not to_rss.check_post_exists_guid(path=rss_path, guid=entry['uuid']):
             # If the post is not in the list, add it.
-            to_rss.add_to_rss(path=rss_path, title=entry['title'], author=author, date=datetime.datetime.now().isoformat(), url=entry['url'], guid=entry['uuid'], body=entry['description'], use_cdata=False)
+            # to_rss.add_to_rss(path=rss_path, title=entry['title'], author=author, date=datetime.datetime.now().isoformat(), url=entry['url'], guid=entry['uuid'], body=entry['description'], use_cdata=False)
             # Source - https://stackoverflow.com/a/77706593
+            print(f"Published: {entry['published']}")
             fe = fg.add_entry()
             fe.id(entry['uuid'])
             fe.title(entry['title'])
