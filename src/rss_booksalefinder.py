@@ -20,10 +20,13 @@ import datetime
 import json
 import urllib.request # To download template RSS document
 from email.utils import format_datetime # Convert datetime object to RFC822, which RSS 2.0 requires
+import argparse
 
 import to_rss
 
 # ========= VARIABLES ===========
+PROGRAM_NAME = "RSS - Booksalefinder"
+__version__ = "0.1.0"
 bool_run_in_background  = True # Hide selenium Chrome window
 bool_output_to_json = False 
 query_cities = ['Toronto'] # Cities that go into the RSS file
@@ -72,15 +75,66 @@ def erase_blank_lines(list):
         return "\n".join(list)
     return list
 
+def parse_args(argv=None):
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        prog=PROGRAM_NAME,
+        description="Short description of your command-line tool." # TODO
+    )
 
-def main():
+    # Positional arguments
+    parser.add_argument(
+        "input",
+        nargs="?",
+        help="Input file or value"
+    )
+
+    # Optional arguments
+    parser.add_argument(
+        "-o", "--output",
+        help="Output file path"
+    )
+
+    parser.add_argument(
+        "-V", "--verbose",
+        action="store_true",
+        help="Enable verbose output"
+    )
+
+    # Version flag
+    parser.add_argument(
+        "-v", "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Display version number"
+    )
+
+    # TODO: More arguments dealing with JSON, output path, etc
+
+    return parser.parse_args(argv)
+
+def main(argv=None):
+    args = parse_args(argv)
+    if args.verbose:
+        # A better solution over a 'bool_prints' variable
+        print("Verbose mode enabled", file=sys.stderr)
+
+    if args.input:
+        if args.verbose:
+            print(f"Input: {args.input}", file=sys.stderr)
+    else:
+        print("No input provided", file=sys.stderr)
+
+    if args.output and args.verbose:
+        print(f"Output will be written to: {args.output}", file=sys.stderr)
+
     path = "~/.config/rss-parsers/Booksalefinder/" # Separate variable for the JSON option
     rss_path = path + "booksalefinder.xml"
     color_sponsor = "#ffff99" # Colour of the background element if it's sponsorted (URLs are found a different way if this is true)
     book_sale_entries_dict = [] # Used to turn rows into a dictionary to format into RSS or JSON later
     if not is_internet_connected():
         print(f"{str_prefix_err}You're not connected to the internet!")
-        sys.exit(1)
+        return 11 # Error code 11 = Try Again
     # ==== Get table data from website via Selenium
     url = "https://www.booksalefinder.com/XON.html"
     
@@ -152,7 +206,8 @@ def main():
         json_filename = f"{path}/{now} results.json"
         with open(json_filename, 'w') as fp:
             json.dump(book_sale_entries_dict, fp)  
-        print(f"{str_prefix_info} Wrote to {json_filename}")
+        if args.verbose:
+            print(f"{str_prefix_info} Wrote to {json_filename}")
 
     # At this point, the JSON file is written. Now we can make the RSS feed 
     # based on the city
@@ -188,8 +243,9 @@ def main():
     
     if int_new_posts > 0:
         print("\t" + str(int_new_posts) + " new posts")
-    sys.exit()
+    return 0 # Completed successfully
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
+    # Exit the program, returning the return code of main() - can be 1, 0, etc
