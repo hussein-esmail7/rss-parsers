@@ -30,8 +30,11 @@ from selenium.webdriver.common.by import By # Used to determine type to search f
 # from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
 import to_rss # Python function file in same directory
 from feedgen.feed import FeedGenerator
+import argparse
 
 # ========= VARIABLES ===========
+PROGRAM_NAME = "Danu RSS Parser"
+__version__ = "0.1.0"
 bool_run_in_background  = True
 bool_prints             = True
 bool_prints_bulk        = False
@@ -57,8 +60,60 @@ color_grey              = '\033[98m'
 str_prefix_q            = f"[{color_pink}Q{color_end}]\t "
 str_prefix_y_n          = f"[{color_pink}y/n{color_end}]"
 str_prefix_err          = f"[{color_red}ERROR{color_end}]\t "
+str_prefix_warn         = f"[{color_yellow}WARN{color_end}]\t "
+str_prefix_blank        = f" "*9
 str_prefix_done         = f"[{color_green}DONE{color_end}]\t "
 str_prefix_info         = f"[{color_cyan}INFO{color_end}]\t "
+
+def parse_args(argv):
+    # TODO: Specify the type input to be the same as the type of sys.argv, then remove "type: ignore" comment associated to other instances of this function
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        prog=PROGRAM_NAME,
+        description="Short description of your command-line tool." # TODO
+    )
+
+    # Positional arguments
+    parser.add_argument(
+        "input",
+        nargs="?", # If "None" or "?", each character of the argument string will be appended to the list
+        # default="str" is also doable, but:
+        # 1. the presence of it means that input is also accepted.
+        # 2. If you want the no input error to run, do not put the line
+        help="Input file or value"
+    )
+
+    # If there is an output file, list the path you want it to be
+    parser.add_argument(
+        "-o", "--output",
+        # Since no 'action' parameter set, string required
+        help="Output file path. Ex: -o=\"path\""
+    )
+
+    # Also used for debugging
+    parser.add_argument(
+        "-V", "--verbose",
+        action="store_true", # Just store true if present, string not required afterwards
+        help="Enable verbose output"
+    )
+
+    # Also used for debugging
+    parser.add_argument(
+        "-q", "--quiet",
+        action="store_true", # Just store true if present, string not required afterwards
+        help="Silent output (--verbose takes priority)"
+    )
+
+    # Version flag
+    parser.add_argument(
+        # NOTE: Program also exits when this argument is invoked
+        "-v", "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Display version number"
+    )
+
+    return parser.parse_args(argv)
 
 def main():
     # ADDITIONAL CODE HERE
@@ -71,6 +126,60 @@ def main():
     # driver = webdriver.Chrome(service=service, options=options)
     # driver = webdriver.Chrome(options=options)
     # driver.set_window_size(200, 1000) # Window size
+
+    args = parse_args(sys.argv) # type: ignore
+    output_format = None
+    output_supported_formats = ["json"] # Used in -o, --output. When adding items, make sure they are all lowercase
+    timestamp = datetime.datetime.now().isoformat(timespec='seconds').replace(":", "-")
+    output_filename = f"data_{timestamp}_danu.json"
+    
+    print(f"{str_prefix_blank}|")
+    print(f"{str_prefix_done}|")
+    print(f"{str_prefix_err}|")
+    print(f"{str_prefix_info}|")
+    print(f"{str_prefix_q}|")
+    print(f"{str_prefix_warn}|")
+    print(f"{str_prefix_y_n}|")
+
+    if args.verbose and args.quiet:
+        print(f"{str_prefix_warn} Cannot have --verbose and --quiet together")
+        print(f"{str_prefix_info} --verbose taking priority")
+        args.quiet = False
+    elif args.verbose:
+        # A better solution over a 'bool_prints' variable
+        print(f"{str_prefix_info} Verbose mode enabled", file=sys.stderr)
+
+    if args.output:
+        # TODO: Make args.output do something
+        # NOTE: (Remove when writing this part is done) Keeping in mind user will type json
+        # TODO: If user inputs a file name with the correct extension, check for 
+        #       1. the extension
+        #       2. if directory it leads to exists
+        #       3. If file exists already (overwrite warning, offer to do the (1) of it if so, (2) if (1) exists, etc)
+        #       4. set the file path
+        #       At the moment it does none of these and can only take in the extension and says no file name given
+        # Check if it's a supported format:
+        if args.output.lower().strip() not in output_supported_formats:
+            output_format = args.output.lower().strip()
+        else:
+            # User provided an unacceptable format
+            print(f"{str_prefix_err} --output: '{args.output}' not an acceptable format", file=sys.stderr)
+            print(f"{str_prefix_blank} Acceptable formats:")
+            for i in output_supported_formats:
+                print(f"{str_prefix_blank} - {i}")
+            return -1
+        if not os.path.isfile(args.output):
+            print(f"{str_prefix_info} ", end="")
+            if args.verbose:
+                print("File path not provided. ", end="")
+            print(f"Saving to {output_filename}")
+
+
+
+        if args.verbose:
+            print(f"Output will be written to: {args.output}", file=sys.stderr)
+
+
     rss_path = "~/.config/rss-parsers/danusocialhouse/danusocialhouse.xml"
     int_new_postings = 0
     options = Options()
@@ -162,27 +271,26 @@ def main():
         
     # Save as JSON
     # Construct filename
-    timestamp = datetime.datetime.now().isoformat(timespec='seconds').replace(":", "-")
-    filename = f"data_{timestamp}_danu.json"
-    # Convert all datetime objects to str (ISO format), or else json parser crashes
-    for item in parsed_items:
-        item['time_start'] = item['time_start'].isoformat()
-        item['time_end'] = item['time_end'].isoformat()
-    # Export dictionary as JSON file
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(parsed_items, f, indent=4, ensure_ascii=False)
-    if bool_prints:
-        print(f"{str_prefix_info} Saved JSON file {filename}")
-
-    # Print raw data 
-    if bool_prints_bulk:
+    if output_format == "json":
+        # Convert all datetime objects to str (ISO format), or else json parser crashes
         for item in parsed_items:
-            print(f"{str_prefix_info} {item['title']}")
-            print(f"\t{item['time_start'][:item['time_start'].index('T')]} at {item['time_start'][item['time_start'].index('T'):]} to {item['time_end'][item['time_end'].index('T'):]}")
-            # print(f"\t{item['time_start']} to {item['time_end']}")
-            print(f"\t\t{item['description']}")
-            print(f"\tSee {item['url']}")
-    
+            item['time_start'] = item['time_start'].isoformat()
+            item['time_end'] = item['time_end'].isoformat()
+        # Export dictionary as JSON file
+        with open(output_filename, "w", encoding="utf-8") as f:
+            json.dump(parsed_items, f, indent=4, ensure_ascii=False)
+        if bool_prints:
+            print(f"{str_prefix_info} Saved JSON file {output_filename}")
+
+        # Print raw data 
+        if bool_prints_bulk:
+            for item in parsed_items:
+                print(f"{str_prefix_info} {item['title']}")
+                print(f"\t{item['time_start'][:item['time_start'].index('T')]} at {item['time_start'][item['time_start'].index('T'):]} to {item['time_end'][item['time_end'].index('T'):]}")
+                # print(f"\t{item['time_start']} to {item['time_end']}")
+                print(f"\t\t{item['description']}")
+                print(f"\tSee {item['url']}")
+                
     # print("\n")
     # dummy = input("> ")
     
@@ -253,7 +361,10 @@ def main():
         else:
             print(f"\t {int_new_postings} new postings")
 
-    sys.exit() # Exit the program
+    print(args) # returns Namespace type
+
+    return 0 # Completed successfully
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
+    # Exit the program, returning the return code of main() - can be 1, 0, etc
