@@ -23,9 +23,10 @@ from selenium.webdriver.common.by import By # Used to determine type to search f
 # from selenium.webdriver.common.keys import Keys  # Used for pressing special keys, like 'enter'
 
 # ========= VARIABLES ===========
-bool_prints = False
+bool_prints             = False
 bool_run_in_background  = False
 target_site             = "https://luma.com/1rg-calendar"
+str_members_only        = "----- MEMBERS ONLY -----\n\n"
 
 # ========= COLOR CODES =========
 color_end               = '\033[0m'
@@ -63,10 +64,6 @@ def most_recent_date(unprocessed: str, weekday: int, str_format: str, start_year
     else:
         return most_recent_date(unprocessed, weekday, str_format, start_year-1)
 
-
-
-
-
 def main():
     options = Options()
     if bool_run_in_background:
@@ -76,13 +73,14 @@ def main():
     driver.set_window_size(200, 1000) # Window size
     driver.get(target_site)
 
-    html_source_code = driver.execute_script("return document.body.innerHTML;")
-    file_name = datetime.datetime.now().strftime("%Y %m %d %H%M%S") + " luma html.txt"
+    # Used to download HTML file
+    # html_source_code = driver.execute_script("return document.body.innerHTML;")
+    # file_name = datetime.datetime.now().strftime("%Y %m %d %H%M%S") + " luma html.txt"
     # print(html_source_code)
-    os.chdir("/Users/hussein/Downloads/")
-    with open(file_name, "w") as text_file:
-        text_file.write(html_source_code)
-        print(f"{str_prefix_info} HTML code written to file {file_name} in {os.getcwd()}")
+    # os.chdir("/Users/hussein/Downloads/")
+    # with open(file_name, "w") as text_file:
+    #     text_file.write(html_source_code)
+    #     print(f"{str_prefix_info} HTML code written to file {file_name} in {os.getcwd()}")
 
     events_list = driver.find_element(By.CLASS_NAME, 'schedule')
     # 'events_list': The entire main content (not the right column that normally
@@ -107,6 +105,7 @@ def main():
     print(f"{str_prefix_info} Number of items found by searching 'timeline-section': {len(events_list)}")
     qty_events_list_1 = len(events_list)
     time.sleep(5)
+    # TODO: Need time for the entire page to load.
     for num, event_day in enumerate(events_list):
         # This loop is needed because for some reason it's finding 3 more
         # elements than the number that already exists.
@@ -126,6 +125,7 @@ def main():
             print(f"{str_prefix_info} Quantity reduced from {qty_events_list_1} to {qty_events_list_2}")
 
     # dummy = input(f"{str_prefix_info} CHECK QUANTITIES > ")
+    array_events = []
     for num, event_day in enumerate(events_list):
         # This is the actual outer loop to get the information
         print(f"{str_prefix_info} Run #{num+1}/{len(events_list)}")
@@ -136,14 +136,42 @@ def main():
         else:
             date_processed = most_recent_date(date_unprocessed, time.strptime(date_unprocessed_weekday, "%A").tm_wday, "%b %d", datetime.datetime.now().year)
         print(f"\t {date_processed.strftime("%Y %m %d (%a)")}")
-
-
-
-
-
+        # ----------------------------------
+        dummy = input(f"{str_prefix_info} Confirmed working until here > ")
+        # ----------------------------------
+        # TODO: Confirmed working until here
+        # ----------------------------------
+        list_events = event_day.find_elements(By.XPATH, ".//div[contains(@class, 'flex-1')]")
+        # 'list_events': All the events that happen in that one day
+        if len(list_events) == 0:
+            print(f"{str_prefix_err} No events found on this day.")
+        for num_event, event in enumerate(list_events):
+            item = event.find_element(By.XPATH, ".//div[contains(@class, 'card-wrapper')]/div/div[contains(@class, 'content-card'])")
+            url = item.find_element(By.XPATH, ".//a[contains@class, 'event-link']").get_attribute('href')
+            title = item.find_element(By.XPATH, ".//a[contains(@class, 'event-link')]").get_attribute('aria-label')
+            print(title)
+            print(url)
+            info = item.find_element(By.XPATH, ".//div/div[contains(@class, 'info-and-cover')]/div[contains(@class, 'info')]")
+            time = info.find_element(By.XPATH, ".//div[contains(@class, 'event-time')]").text # Ex. "7:00 PM"
+            print(time)
+            location = info.find_element(By.XPATH, ".//div[contains(@class, 'gap-1')]/div[2]/div[contains(@class, 'text-ellipses')]").text
+            print(location)
+            # TODO: Decide if I want to get the location now or when each URL is visited
+            description = ""
+            if "Members Only" in info.text:
+                description = str_members_only
+            array_events.append({
+                'title': title,
+                'time': time,
+                'url': url.
+                'location': location,
+                'price': 0, # TODO
+                'description': description
+                })
 
 
     dummy = input(f"{str_prefix_info} Program is up to date. Press enter to quit > ")
+
     # Example of getting elements by XPATH -----------------------------------
     # ITEM = driver.find_element(By.XPATH, '//time/span[1]')        # singular
     # ITEM = driver.find_elements(By.XPATH, '//time/span[1]')        # n items
