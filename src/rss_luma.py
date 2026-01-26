@@ -135,7 +135,7 @@ def main():
             date_processed = datetime.datetime.now()
         else:
             date_processed = most_recent_date(date_unprocessed, time.strptime(date_unprocessed_weekday, "%A").tm_wday, "%b %d", datetime.datetime.now().year)
-        print(f"\t {date_processed.strftime("%Y %m %d (%a)")}")
+        print(f"\t  {date_processed.strftime("%Y %m %d (%a)")}")
         # ----------------------------------
         dummy = input(f"{str_prefix_info} Confirmed working until here > ")
         # ----------------------------------
@@ -146,13 +146,16 @@ def main():
         if len(list_events) == 0:
             print(f"{str_prefix_err} No events found on this day.")
         for num_event, event in enumerate(list_events):
-            item = event.find_element(By.XPATH, ".//div[contains(@class, 'card-wrapper')]/div/div[contains(@class, 'content-card'])")
-            url = item.find_element(By.XPATH, ".//a[contains@class, 'event-link']").get_attribute('href')
-            title = item.find_element(By.XPATH, ".//a[contains(@class, 'event-link')]").get_attribute('aria-label')
+            item = event.find_element(By.XPATH, ".//div[contains(@class, 'card-wrapper')]")
+            item = item.find_element(By.XPATH, ".//div")
+            url = item.find_element(By.TAG_NAME, "a").get_attribute('href')
+            title = item.find_element(By.TAG_NAME, "a").get_attribute('aria-label')
+            # item = item.find_element(By.XPATH, ".//div[contains(@class, 'event-content'])")
+            item = item.find_element(By.TAG_NAME, "div")
             print(title)
             print(url)
             info = item.find_element(By.XPATH, ".//div/div[contains(@class, 'info-and-cover')]/div[contains(@class, 'info')]")
-            time = info.find_element(By.XPATH, ".//div[contains(@class, 'event-time')]").text # Ex. "7:00 PM"
+            time_text = info.find_element(By.XPATH, ".//div[contains(@class, 'event-time')]").text # Ex. "7:00 PM"
             print(time)
             location = info.find_element(By.XPATH, ".//div[contains(@class, 'gap-1')]/div[2]/div[contains(@class, 'text-ellipses')]").text
             print(location)
@@ -162,8 +165,8 @@ def main():
                 description = str_members_only
             array_events.append({
                 'title': title,
-                'time': time,
-                'url': url.
+                'time': time_text,
+                'url': url,
                 'location': location,
                 'price': 0, # TODO
                 'description': description
